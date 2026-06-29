@@ -5,7 +5,7 @@
 	<name>Batch</name>
 	<summary>Submit and monitor batch jobs on the ScienceData compute service</summary>
 	<description>A web interface for the ScienceData GridFactory batch service. Compose a job from a template, pick input files from your ScienceData home, submit it, and monitor its progress and output — all from Nextcloud. The app authenticates you to the batch service server-side with your personal X.509 certificate, managed by files_sharding. A thin UI over the batch service (REST over mutual-TLS); job templates live in a folder in your files.</description>
-	<version>0.1.0</version>
+	<version>0.1.1</version>
 	<licence>agpl</licence>
 	<author mail="fror@dtu.dk">Frederik Orellana, DTU</author>
 	<namespace>Batch</namespace>

@@ -269,6 +269,7 @@
 	}
 
 	function showInspectInfo() {
+		if (!inspectJob) { return }
 		$('#batch-inspect-body').textContent = 'Loading…'
 		apiGet('api/job?identifier=' + encodeURIComponent(inspectJob.identifier)).then((r) => {
 			if (r.status !== 'success') { $('#batch-inspect-body').textContent = r.data.message; return }
@@ -278,6 +279,7 @@
 	}
 
 	function showInspectFile(filename) {
+		if (!inspectJob) { return }
 		$('#batch-inspect-body').textContent = 'Loading…'
 		const q = 'api/job/file?identifier=' + encodeURIComponent(inspectJob.identifier)
 			+ '&filename=' + encodeURIComponent(filename)

@@ -156,6 +156,13 @@
 	z-index: 10000;
 }
 
+/* The display:flex above otherwise beats the [hidden] attribute (equal
+   specificity, author rule wins), leaving the modal permanently visible
+   on load. Restore hidden so it only shows when openInspect() opens it. */
+.batch-modal[hidden] {
+	display: none;
+}
+
 .batch-modal-box {
 	background: var(--color-main-background, #fff);
 	color: var(--color-main-text, #222);
