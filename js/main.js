@@ -26,22 +26,42 @@
 		if (el) { el.hidden = pending <= 0 }
 	}
 
-	function apiGet(path) {
+	// Single fetch path for every call. Guarantees the loading spinner is
+	// cleared no matter what: the work is wrapped so a synchronous throw in
+	// url()/fetch() still hits .finally(); an AbortController bounds the wait
+	// (the server-side service curl tops out ~75s, so 120s is a safe ceiling)
+	// so a stalled backend can never spin forever; and any network/timeout/
+	// non-JSON error resolves to a normal { status:'error' } object so callers
+	// surface a toast instead of dropping an unhandled rejection.
+	const REQUEST_TIMEOUT_MS = 120000
+	function apiFetch(path, init) {
 		loading(true)
-		return fetch(url(path), {
+		const ctrl = new AbortController()
+		const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS)
+		return Promise.resolve()
+			.then(() => fetch(url(path), Object.assign({ signal: ctrl.signal }, init)))
+			.then((r) => r.json())
+			.catch((e) => ({
+				status: 'error',
+				data: { message: (e && e.name === 'AbortError') ? 'The request timed out.' : 'Network error.' },
+			}))
+			.finally(() => { clearTimeout(timer); loading(false) })
+	}
+
+	function apiGet(path) {
+		return apiFetch(path, {
 			headers: { requesttoken: OC.requestToken, 'OCS-APIRequest': 'true' },
-		}).then((r) => r.json()).finally(() => loading(false))
+		})
 	}
 
 	function apiPost(path, params) {
-		loading(true)
 		const body = new URLSearchParams()
 		Object.keys(params || {}).forEach((k) => body.append(k, params[k] == null ? '' : params[k]))
-		return fetch(url(path), {
+		return apiFetch(path, {
 			method: 'POST',
 			headers: { requesttoken: OC.requestToken, 'Content-Type': 'application/x-www-form-urlencoded' },
 			body: body.toString(),
-		}).then((r) => r.json()).finally(() => loading(false))
+		})
 	}
 
 	function toast(message, isError) {
