@@ -90,6 +90,17 @@
 				if (r.status === 'success') { toast('Certificate generated'); refreshSetupKeepPanel() } else { toast(r.data.message, true) }
 			})
 		})
+		$('#batch-browse-folder').addEventListener('click', () => {
+			if (!window.OC || !OC.dialogs || !OC.dialogs.filepicker) { return }
+			OC.dialogs.filepicker(
+				t('batch', 'Choose work folder'),
+				(path) => { $('#batch-workfolder').value = path || '/' },
+				false,
+				'httpd/unix-directory',
+				true,
+				OC.dialogs.FILEPICKER_TYPE_CHOOSE
+			)
+		})
 		$('#batch-save-settings').addEventListener('click', () => {
 			apiPost('api/settings', { work_folder: $('#batch-workfolder').value }).then((r) => {
 				if (r.status === 'success') { toast('Saved'); refreshSetupKeepPanel() } else { toast(r.data.message, true) }
