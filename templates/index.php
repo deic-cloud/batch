@@ -17,7 +17,7 @@
 				<div class="batch-setup-step">
 					<span class="batch-setup-label"><?php p($l->t('Certificate')); ?>:</span>
 					<span id="batch-cert-status"></span>
-					<button id="batch-gen-cert" class="button" title="<?php p($l->t('Generating a new certificate invalidates previously generated certificates for data access')); ?>"><?php p($l->t('Generate certificate')); ?></button>
+					<button id="batch-gen-cert" class="button" title="<?php p($l->t('Generating a new certificate invalidates previously generated certificates for data access.')); ?>"><?php p($l->t('Generate certificate')); ?></button>
 				</div>
 				<div class="batch-setup-step">
 					<label class="batch-setup-label" for="batch-workfolder"><?php p($l->t('Work folder')); ?>:</label>
