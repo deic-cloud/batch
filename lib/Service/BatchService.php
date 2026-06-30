@@ -240,11 +240,13 @@ class BatchService {
 			CURLOPT_FOLLOWLOCATION => false,
 			CURLOPT_CONNECTTIMEOUT => 15,
 			CURLOPT_TIMEOUT        => 60,
-			// Pin the pod's self-signed cert if configured; never trust the
-			// system CA store for this internal service. Hostname check is off
-			// because the pod CN is volatile and carries no SAN.
-			CURLOPT_SSL_VERIFYHOST => 0,
-			CURLOPT_SSL_VERIFYPEER => $this->caCert !== '',
+			// Verify the server certificate and hostname. The default kube-Caddy
+			// FQDN (batch.sciencedata.dk) presents a Let's Encrypt cert validated
+			// against the system CA store. For a private pod reached directly, set
+			// batch_ca_cert to pin its self-signed cert — that cert now carries a
+			// 'batch' SAN, so the hostname check still passes.
+			CURLOPT_SSL_VERIFYHOST => 2,
+			CURLOPT_SSL_VERIFYPEER => true,
 		];
 		if ($this->caCert !== '') {
 			$opts[CURLOPT_CAINFO] = $this->caCert;
