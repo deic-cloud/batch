@@ -42,8 +42,14 @@ class BatchService {
 		private LoggerInterface $logger,
 	) {
 		// Connection config = per-instance appconfig (driven by the admin form).
-		$this->apiUrl    = rtrim($appConfig->getValueString('batch', 'batch_api_url', 'https://batch/'), '/') . '/';
-		$this->serviceIp = $appConfig->getValueString('batch', 'batch_service_ip', '10.0.0.104');
+		// Default to the kube-Caddy FQDN: it terminates the client-cert TLS and
+		// sets the SSL-CLIENT-DN header mod_gacl needs to authorise the user
+		// (submit AND manage/delete). The direct ClusterIP path carries no such
+		// header, so jobs can be submitted but not deleted. Leave batch_service_ip
+		// empty so the host resolves normally (through kube-Caddy); set it only
+		// for a private pod reachable directly by ClusterIP.
+		$this->apiUrl    = rtrim($appConfig->getValueString('batch', 'batch_api_url', 'https://batch.sciencedata.dk/'), '/') . '/';
+		$this->serviceIp = $appConfig->getValueString('batch', 'batch_service_ip', '');
 		$this->caCert    = $appConfig->getValueString('batch', 'batch_ca_cert', '');
 		// O= component of the user DN is a files_sharding system value.
 		$this->org       = $config->getSystemValueString('files_sharding_cert_org', 'sciencedata.dk');
