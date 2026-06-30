@@ -62,6 +62,13 @@
 	color: var(--color-text-maxcontrast, #767676);
 }
 
+/* The #batch-loading id selector (1,0,0) beats the [hidden] attribute, so
+   without this the "Working…" spinner stayed visible permanently and the
+   JS loading() toggle had no effect. Same trap as .batch-modal above. */
+#batch-loading[hidden] {
+	display: none;
+}
+
 /* editor */
 .batch-editor-row {
 	display: flex;
