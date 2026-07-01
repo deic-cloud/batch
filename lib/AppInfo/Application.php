@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace OCA\Batch\AppInfo;
 
-use OCA\Batch\Settings\AdminForm;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -18,8 +17,8 @@ class Application extends App implements IBootstrap {
 	}
 
 	public function register(IRegistrationContext $context): void {
-		// Connection settings live under Administration → Additional settings.
-		$context->registerDeclarativeSettings(AdminForm::class);
+		// Connection settings are read from config.php (see BatchService); there
+		// is no admin UI.
 	}
 
 	public function boot(IBootContext $context): void {

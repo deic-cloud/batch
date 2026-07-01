@@ -7,7 +7,6 @@ namespace OCA\Batch\Service;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
-use OCP\IAppConfig;
 use OCP\IConfig;
 use Psr\Log\LoggerInterface;
 
@@ -23,7 +22,6 @@ class SetupService {
 
 	public function __construct(
 		private IConfig $config,
-		private IAppConfig $appConfig,
 		private CertBridge $cert,
 		private IRootFolder $rootFolder,
 		private LoggerInterface $logger,
@@ -47,9 +45,13 @@ class SetupService {
 		return $this->config->getUserValue($uid, 'batch', self::WORK_FOLDER_KEY, self::DEFAULT_WORK_FOLDER);
 	}
 
-	/** Base URL of the user's home server, used to build input/output URLs in job scripts. */
+	/**
+	 * Base URL of the user's home server, used to build input/output URLs in job
+	 * scripts. Read from config.php. TODO: derive per-user from files_sharding
+	 * (each user's home server differs) rather than a single instance-wide value.
+	 */
 	public function homeServerUrl(string $uid): string {
-		return rtrim($this->appConfig->getValueString('batch', 'batch_home_server_url', ''), '/');
+		return rtrim($this->config->getSystemValueString('batch_home_server_url', ''), '/');
 	}
 
 	/** @return array{dn:string,expires:string}|false */

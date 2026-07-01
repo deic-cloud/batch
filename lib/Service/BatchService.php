@@ -5,54 +5,42 @@ declare(strict_types=1);
 namespace OCA\Batch\Service;
 
 use OCA\Batch\Exception\BatchServiceException;
-use OCP\IAppConfig;
 use OCP\IConfig;
 use Psr\Log\LoggerInterface;
 
 /**
- * Client for the ScienceData GridFactory batch service (NC34 port of the OC7
- * OC_Batch_Util). Talks REST over mutual-TLS: the user is authenticated to the
- * batch service server-side with their personal X.509 cert/key, managed by
- * files_sharding's CertificateService (via CertBridge).
+ * Client for the GridFactory batch service. Talks REST over mutual-TLS: the
+ * user is authenticated to the batch service server-side with their personal
+ * X.509 cert/key, managed by files_sharding's CertificateService (via
+ * CertBridge).
  *
- * Connection (system config, with defaults that match our cluster):
- *   batch_api_url     base URL, default https://batch/
- *   batch_service_ip  stable k8s Service ClusterIP, default 10.0.0.104 — the
- *                     api_url host is CURLOPT_RESOLVE'd to this, so we don't
- *                     depend on an /etc/hosts entry.
- *   batch_ca_cert     path to the batch pod's pinned (self-signed) cert. If set,
- *                     the server cert is verified against it (VERIFYPEER on) with
- *                     hostname checking off (the pod CN is the volatile pod name,
- *                     no SAN). If empty, peer verification is disabled (dev).
- *   files_sharding_cert_org  O= component of the user DN, default sciencedata.dk
+ * Configuration is read from config.php system values (so it can be deployed
+ * and automated per instance rather than stored in the database):
+ *   batch_api_url            base URL of the batch service (required).
+ *   files_sharding_cert_org  O= component of the user certificate DN.
+ * The server certificate is verified against the system CA store; the batch
+ * service must therefore present a certificate from a trusted CA.
  */
 class BatchService {
 	private string $apiUrl;
-	private string $serviceIp;
-	private string $caCert;
 	private string $org;
 
 	/** @var array<string,array{cert:string,key:string}> temp cred files, per uid */
 	private array $creds = [];
 
 	public function __construct(
-		IAppConfig $appConfig,
 		IConfig $config,
 		private CertBridge $cert,
 		private LoggerInterface $logger,
 	) {
-		// Connection config = per-instance appconfig (driven by the admin form).
-		// Default to the kube-Caddy FQDN: it terminates the client-cert TLS and
-		// sets the SSL-CLIENT-DN header mod_gacl needs to authorise the user
-		// (submit AND manage/delete). The direct ClusterIP path carries no such
-		// header, so jobs can be submitted but not deleted. Leave batch_service_ip
-		// empty so the host resolves normally (through kube-Caddy); set it only
-		// for a private pod reachable directly by ClusterIP.
-		$this->apiUrl    = rtrim($appConfig->getValueString('batch', 'batch_api_url', 'https://batch.sciencedata.dk/'), '/') . '/';
-		$this->serviceIp = $appConfig->getValueString('batch', 'batch_service_ip', '');
-		$this->caCert    = $appConfig->getValueString('batch', 'batch_ca_cert', '');
-		// O= component of the user DN is a files_sharding system value.
-		$this->org       = $config->getSystemValueString('files_sharding_cert_org', 'sciencedata.dk');
+		$raw = trim($config->getSystemValueString('batch_api_url', ''));
+		$this->apiUrl = $raw === '' ? '' : rtrim($raw, '/') . '/';
+		$this->org    = $config->getSystemValueString('files_sharding_cert_org', 'sciencedata.dk');
+	}
+
+	/** Whether a batch service URL has been configured (in config.php). */
+	public function isConfigured(): bool {
+		return $this->apiUrl !== '';
 	}
 
 	public function __destruct() {
@@ -86,11 +74,8 @@ class BatchService {
 	 * @return list<array<string,string>>
 	 */
 	public function getJobs(string $uid): array {
-		// NB: we do NOT filter by userInfo. On the direct silo→pod path the
-		// SSL-Client-DN header (set only by kube-Caddy from 10.2.12.1) is absent,
-		// so the batch service stores an empty userInfo on submitted jobs and a
-		// userInfo filter would hide every job. Per-user scoping needs the
-		// qualified kube-Caddy path — a decision flagged for Frederik.
+		// Returns the full job listing the batch service exposes to the caller
+		// (it authorises the request by the presented client certificate).
 		$text = $this->request($uid, 'GET', $this->apiUrl . 'db/jobs/?format=text');
 		$lines = explode("\n", trim($text));
 		if (count($lines) < 1 || $lines[0] === '') {
@@ -137,7 +122,7 @@ class BatchService {
 
 	/**
 	 * Submit a job. $scriptText is the (already-loaded) job script; $inputFile
-	 * is an optional path in the user's ScienceData home to wire into the
+	 * is an optional path in the user's home folder to wire into the
 	 * #GRIDFACTORY placeholders. Returns the created job id (URL) or throws.
 	 */
 	public function submitJob(string $uid, string $scriptText, ?string $inputFile, string $workFolder, string $homeServerUrl): string {
@@ -235,28 +220,17 @@ class BatchService {
 			CURLOPT_CUSTOMREQUEST  => $method,
 			CURLOPT_SSLCERT        => $certFile,
 			CURLOPT_SSLKEY         => $keyFile,
-			CURLOPT_USERAGENT      => 'ScienceData/Nextcloud-batch',
+			CURLOPT_USERAGENT      => 'Nextcloud-batch',
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_FOLLOWLOCATION => false,
 			CURLOPT_CONNECTTIMEOUT => 15,
 			CURLOPT_TIMEOUT        => 60,
-			// Verify the server certificate and hostname. The default kube-Caddy
-			// FQDN (batch.sciencedata.dk) presents a Let's Encrypt cert validated
-			// against the system CA store. For a private pod reached directly, set
-			// batch_ca_cert to pin its self-signed cert — that cert now carries a
-			// 'batch' SAN, so the hostname check still passes.
+			// Verify the server certificate and hostname against the system CA
+			// store; the batch service must present a certificate from a CA the
+			// host trusts.
 			CURLOPT_SSL_VERIFYHOST => 2,
 			CURLOPT_SSL_VERIFYPEER => true,
 		];
-		if ($this->caCert !== '') {
-			$opts[CURLOPT_CAINFO] = $this->caCert;
-		}
-		// Resolve the api_url host to the stable Service IP without an
-		// /etc/hosts entry (avoids depending on the batch_host.sh cronjob).
-		$host = parse_url($this->apiUrl, PHP_URL_HOST);
-		if ($host && $this->serviceIp !== '') {
-			$opts[CURLOPT_RESOLVE] = ["{$host}:443:{$this->serviceIp}"];
-		}
 		if ($body !== null) {
 			$opts[CURLOPT_POSTFIELDS] = $body;
 		}
