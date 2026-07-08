@@ -135,6 +135,10 @@
 			e.preventDefault()
 			apiGet('api/setup').then((r) => showSetup(r.data || {}))
 		})
+		$('#batch-setup-done').addEventListener('click', (e) => {
+			e.preventDefault()
+			showMain()
+		})
 	}
 
 	// re-read status but stay on the setup panel (so the user can finish all steps)

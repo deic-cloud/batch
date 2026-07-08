@@ -9,7 +9,10 @@
 
 		<!-- Setup: shown until the user has a certificate and a work folder -->
 		<div id="batch-setup" class="batch-panel" hidden>
-			<h2><?php p($l->t('Set up Batch')); ?></h2>
+			<div style="display:flex;align-items:baseline;gap:1em">
+				<h2 style="margin:0"><?php p($l->t('Set up Batch')); ?></h2>
+				<a id="batch-setup-done" href="#" class="batch-link"><?php p($l->t('Back to jobs')); ?></a>
+			</div>
 			<div id="batch-setup-nofs" class="batch-note" hidden>
 				<?php p($l->t('Batch needs the files_sharding app (it manages your X.509 certificate). Please ask an administrator to enable it.')); ?>
 			</div>

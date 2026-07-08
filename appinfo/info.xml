@@ -5,7 +5,7 @@
 	<name>Batch</name>
 	<summary>Submit and monitor batch jobs on a GridFactory compute service</summary>
 	<description>A web interface for a GridFactory batch service. Compose a job from a template, pick input files from your home folder, submit it, and monitor its progress and output — all from Nextcloud. The app authenticates you to the batch service server-side with your personal X.509 certificate, managed by files_sharding. A thin UI over the batch service (REST over mutual-TLS); job templates live in a folder in your files. Configure the service URL in config.php (batch_api_url).</description>
-	<version>0.1.4</version>
+	<version>0.1.5</version>
 	<licence>agpl</licence>
 	<author mail="fror@dtu.dk">Frederik Orellana, DTU</author>
 	<namespace>Batch</namespace>
