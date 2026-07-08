@@ -216,3 +216,7 @@
 	word-break: break-word;
 	flex: 1 1 auto;
 }
+
+.batch-setup-body {
+	padding: 16px;
+}

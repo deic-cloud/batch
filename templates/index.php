@@ -8,11 +8,13 @@
 	<div id="app-content-batch" class="viewcontainer">
 
 		<!-- Setup: shown until the user has a certificate and a work folder -->
-		<div id="batch-setup" class="batch-panel" hidden>
-			<div style="display:flex;align-items:baseline;gap:1em">
-				<h2 style="margin:0"><?php p($l->t('Set up Batch')); ?></h2>
-				<a id="batch-setup-done" href="#" class="batch-link"><?php p($l->t('Back to jobs')); ?></a>
+		<div id="batch-setup" class="batch-modal" hidden>
+		 <div class="batch-modal-box">
+			<div class="batch-modal-head">
+				<span><?php p($l->t('Set up Batch')); ?></span>
+				<button id="batch-setup-close" class="batch-modal-close" aria-label="Close">✕</button>
 			</div>
+			<div class="batch-setup-body">
 			<div id="batch-setup-nofs" class="batch-note" hidden>
 				<?php p($l->t('Batch needs the files_sharding app (it manages your X.509 certificate). Please ask an administrator to enable it.')); ?>
 			</div>
@@ -33,6 +35,8 @@
 					<button id="batch-get-templates" class="button" title="<?php p($l->t('Get a default set of job templates to get started. Existing templates with the same names will be overwritten.')); ?>"><?php p($l->t('Copy job templates into my work folder')); ?></button>
 				</div>
 			</div>
+			</div>
+		 </div>
 		</div>
 
 		<!-- Main: job editor + job list -->

@@ -76,9 +76,7 @@
 
 	// ----------------------------------------------------------------- setup
 
-	function showSetup(status) {
-		$('#batch-main').hidden = true
-		$('#batch-setup').hidden = false
+	function populateSetup(status) {
 		const nofs = !status.filesSharding
 		$('#batch-setup-nofs').hidden = !nofs
 		$('#batch-setup-steps').hidden = nofs
@@ -89,8 +87,18 @@
 		$('#batch-workfolder').value = status.workFolder || '/Batch'
 	}
 
-	function showMain() {
+	// Setup is a modal overlaid on the main (jobs) view.
+	function openSetup(status) {
+		populateSetup(status)
+		$('#batch-setup').hidden = false
+	}
+
+	function closeSetup() {
 		$('#batch-setup').hidden = true
+	}
+
+	function showMain() {
+		closeSetup()
 		$('#batch-main').hidden = false
 		loadScripts()
 		loadJobs()
@@ -99,7 +107,8 @@
 	function refreshSetup() {
 		return apiGet('api/setup').then((r) => {
 			const s = r.data || {}
-			if (s.configured) { showMain() } else { showSetup(s) }
+			showMain()                          // main is always the base view…
+			if (!s.configured) { openSetup(s) } // …with the setup modal over it until configured
 			return s
 		})
 	}
@@ -128,22 +137,20 @@
 		})
 		$('#batch-get-templates').addEventListener('click', () => {
 			apiPost('api/templates/get', {}).then((r) => {
-				if (r.status === 'success') { toast('Templates copied'); refreshSetup() } else { toast(r.data.message, true) }
+				if (r.status === 'success') { toast('Templates copied'); refreshSetupKeepPanel() } else { toast(r.data.message, true) }
 			})
 		})
 		$('#batch-setup-link').addEventListener('click', (e) => {
 			e.preventDefault()
-			apiGet('api/setup').then((r) => showSetup(r.data || {}))
+			apiGet('api/setup').then((r) => openSetup(r.data || {}))
 		})
-		$('#batch-setup-done').addEventListener('click', (e) => {
-			e.preventDefault()
-			showMain()
-		})
+		$('#batch-setup-close').addEventListener('click', () => closeSetup())
+		$('#batch-setup').addEventListener('click', (e) => { if (e.target.id === 'batch-setup') { closeSetup() } })
 	}
 
 	// re-read status but stay on the setup panel (so the user can finish all steps)
 	function refreshSetupKeepPanel() {
-		return apiGet('api/setup').then((r) => showSetup(r.data || {}))
+		return apiGet('api/setup').then((r) => openSetup(r.data || {}))
 	}
 
 	// --------------------------------------------------------------- editor
