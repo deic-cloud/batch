@@ -24,7 +24,7 @@
 
 # This would get the current user's usercert.pem - we need the one
 # corresponding to the key that signed the file.
-#curl --insecure HOME_SERVER_PRIVATE_URL/remote.php/getcert?user=SD_USER | jq -r .data.certificate > usercert.pem
+#curl --insecure HOME_SERVER_PRIVATE_URL/index.php/apps/files_sharding/x509/cert > usercert.pem
 
 # Fetch the signature file
 curl --insecure "IN_FILE_URL.sig" > "IN_FILENAME_RAW.sig"

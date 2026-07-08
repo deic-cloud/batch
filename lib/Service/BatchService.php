@@ -137,7 +137,10 @@ class BatchService {
 			$scriptText = substr_replace($scriptText, "#GRIDFACTORY -u {$jobId}\n#GRIDFACTORY", $pos, strlen('#GRIDFACTORY'));
 		}
 
-		$workFolderUrl = $homeServerUrl !== '' ? $homeServerUrl . '/grid' . $workFolder : '';
+		// The worker stages files over WebDAV against the user's home server;
+		// Nextcloud serves each user's files at /remote.php/dav/files/<uid>.
+		$davBase = $homeServerUrl !== '' ? $homeServerUrl . '/remote.php/dav/files/' . $uid : '';
+		$workFolderUrl = $davBase !== '' ? $davBase . $workFolder : '';
 		$subs = [
 			'WORK_FOLDER_URL'        => $workFolderUrl,
 			'HOME_SERVER_PRIVATE_URL' => $homeServerUrl,
@@ -145,7 +148,7 @@ class BatchService {
 			'SD_USER'                => $uid,
 		];
 		if ($inputFile !== null && $inputFile !== '') {
-			$inputFileUrl   = $homeServerUrl . '/grid' . $inputFile;
+			$inputFileUrl   = $davBase . $inputFile;
 			$inputFolderUrl = preg_replace('|/[^/]+$|', '/', $inputFileUrl) ?? $inputFileUrl;
 			$inputFilename  = basename($inputFile);
 			$inputBasename  = preg_replace('|\.[^.]+$|', '', $inputFilename) ?? $inputFilename;

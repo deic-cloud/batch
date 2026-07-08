@@ -21,7 +21,7 @@
 ################################################
 
 # Fetch my pricate key
-curl --insecure HOME_SERVER_PRIVATE_URL/remote.php/getkey | jq -r .data.private_key > userkey_unenc.pem
+curl --insecure HOME_SERVER_PRIVATE_URL/index.php/apps/files_sharding/x509/key > userkey_unenc.pem
 
 # Decrypt
 openssl pkeyutl -decrypt -inkey userkey_unenc.pem -in "IN_FILENAME_RAW" -out "IN_BASENAME"

@@ -22,7 +22,7 @@
 ################################################
 
 # Fetch my private key
-curl --insecure HOME_SERVER_PRIVATE_URL/remote.php/getkey | jq -r .data.private_key > userkey_unenc.pem
+curl --insecure HOME_SERVER_PRIVATE_URL/index.php/apps/files_sharding/x509/key > userkey_unenc.pem
 
 # Sign
 openssl dgst -sha256 -sign userkey_unenc.pem -out "IN_FILENAME.sig" "IN_FILENAME_RAW"

@@ -29,10 +29,10 @@
 ################################################
 
 # Fetch my private key
-curl --insecure HOME_SERVER_PRIVATE_URL/remote.php/getkey | jq -r .data.private_key > userkey_unenc.pem
+curl --insecure HOME_SERVER_PRIVATE_URL/index.php/apps/files_sharding/x509/key > userkey_unenc.pem
 
 # Fetch public certificate
-curl --insecure HOME_SERVER_PRIVATE_URL/remote.php/getcert?user=SD_USER | jq -r .data.certificate > usercert.pem
+curl --insecure HOME_SERVER_PRIVATE_URL/index.php/apps/files_sharding/x509/cert > usercert.pem
 
 # Fetch ScienceData signature image
 curl -O https://sciencedata.dk/themes/deic_theme_oc7/core/img/sciencedata_signature.png

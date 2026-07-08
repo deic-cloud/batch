@@ -24,7 +24,7 @@
 
 
 # Fetch public certificate
-curl --insecure HOME_SERVER_PRIVATE_URL/remote.php/getcert?user=SD_USER | jq -r .data.certificate > usercert.pem
+curl --insecure HOME_SERVER_PRIVATE_URL/index.php/apps/files_sharding/x509/cert > usercert.pem
 
 # Extract the publick key
 openssl x509 -pubkey -in usercert.pem -nocert > pubkey.pem
