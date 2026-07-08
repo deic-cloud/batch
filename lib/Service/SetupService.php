@@ -46,12 +46,14 @@ class SetupService {
 	}
 
 	/**
-	 * Base URL of the user's home server, used to build input/output URLs in job
-	 * scripts. Read from config.php. TODO: derive per-user from files_sharding
-	 * (each user's home server differs) rather than a single instance-wide value.
+	 * Base URL of the user's home server, used to build the input/output file
+	 * URLs in job scripts. The app runs on the user's home silo, so the home
+	 * server is this instance — use its own URL (overwrite.cli.url). In the test
+	 * setup the external URL doubles as the internal one; a dedicated internal
+	 * URL for the staging network can be added later if it differs.
 	 */
 	public function homeServerUrl(string $uid): string {
-		return rtrim($this->config->getSystemValueString('batch_home_server_url', ''), '/');
+		return rtrim($this->config->getSystemValueString('overwrite.cli.url', ''), '/');
 	}
 
 	/** @return array{dn:string,expires:string}|false */
