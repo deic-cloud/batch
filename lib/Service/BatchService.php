@@ -55,6 +55,16 @@ class BatchService {
 		return "/CN={$uid}/O={$this->org}";
 	}
 
+	/** RFC 4122 v4 UUID — used as the job id (the GridFactory spool dir name). */
+	private function uuid(): string {
+		$b = random_bytes(16);
+		$b[6] = chr((ord($b[6]) & 0x0f) | 0x40);
+		$b[8] = chr((ord($b[8]) & 0x3f) | 0x80);
+		$h = bin2hex($b);
+		return substr($h, 0, 8) . '-' . substr($h, 8, 4) . '-' . substr($h, 12, 4)
+			. '-' . substr($h, 16, 4) . '-' . substr($h, 20, 12);
+	}
+
 	/**
 	 * The batch service reports a job's identifier as a full URL
 	 * (https://batch/gridfactory/jobs/<id>). The db/gridfactory endpoints expect
@@ -129,7 +139,10 @@ class BatchService {
 		if (trim($scriptText) === '') {
 			throw new BatchServiceException('Empty job script.');
 		}
-		$jobId = $this->apiUrl . 'gridfactory/jobs/' . uniqid();
+		// The GridFactory spoolmanager requires the job id (its spool dir name) to
+		// be a UUID; a non-UUID name makes the server assign its own UUID, which
+		// then no longer matches the dir ("could not prepare job").
+		$jobId = $this->apiUrl . 'gridfactory/jobs/' . $this->uuid();
 
 		// Stamp the job's own id and substitute the template placeholders.
 		$pos = strpos($scriptText, '#GRIDFACTORY');
