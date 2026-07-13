@@ -137,9 +137,12 @@
 	background: var(--color-background-dark, #ededed);
 	color: var(--color-main-text, #222);
 }
-.batch-st-done { background: var(--color-success, #2d7d46); color: #fff; }
+/* Solid, high-contrast status pills. NC34's --color-success / --color-error are
+   pale background tints (cf. the --color-error-text note), too light for white
+   text, so use solid colours for the filled badge. */
+.batch-st-done { background: #2d7d46; color: #fff; }
 .batch-st-running { background: var(--color-primary-element, #1a73e8); color: #fff; }
-.batch-st-fail { background: var(--color-error, #e9322d); color: #fff; }
+.batch-st-fail { background: #c9302c; color: #fff; }
 
 /* compact icon buttons in the table — scope to 2 classes to beat core's plain
    <button> sizing (width:130px) */

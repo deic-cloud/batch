@@ -298,17 +298,18 @@
 			badge.textContent = job.csStatus || ''
 			tdStatus.appendChild(badge); tr.appendChild(tdStatus)
 
+			// Inspect (fetch script/stdout/stderr) and delete both need the
+			// caller to be the job's owner, so only render them for own jobs.
 			const tdAct = document.createElement('td')
 			tdAct.className = 'batch-col-actions'
-			const more = document.createElement('button')
-			more.className = 'button batch-icon'; more.textContent = '⋯'; more.title = 'Inspect'
-			more.addEventListener('click', () => openInspect(job))
-			tdAct.appendChild(more)
 			if (mine) {
+				const more = document.createElement('button')
+				more.className = 'button batch-icon'; more.textContent = '⋯'; more.title = 'Inspect'
+				more.addEventListener('click', () => openInspect(job))
 				const del = document.createElement('button')
 				del.className = 'button batch-icon icon-delete'; del.title = 'Delete'
 				del.addEventListener('click', () => deleteJobs([id]))
-				tdAct.appendChild(del)
+				tdAct.appendChild(more); tdAct.appendChild(del)
 			}
 			tr.appendChild(tdAct)
 
