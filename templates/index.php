@@ -45,6 +45,8 @@
 				<button id="batch-new" class="primary"><?php p($l->t('New job')); ?></button>
 				<button id="batch-refresh" class="button"><?php p($l->t('Refresh')); ?></button>
 				<button id="batch-delete" class="button" disabled><?php p($l->t('Delete selected')); ?></button>
+				<input type="text" id="batch-filter" class="batch-filter" placeholder="<?php p($l->t('Filter jobs…')); ?>" />
+				<label class="batch-mine-label"><input type="checkbox" id="batch-mine-only" checked /> <?php p($l->t('My jobs only')); ?></label>
 				<span id="batch-loading" hidden><span class="icon-loading-small"></span> <?php p($l->t('Working…')); ?></span>
 				<a id="batch-setup-link" href="#" class="batch-link"><?php p($l->t('Setup')); ?></a>
 			</div>

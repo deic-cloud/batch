@@ -136,9 +136,15 @@
 			})
 		})
 		$('#batch-get-templates').addEventListener('click', () => {
-			apiPost('api/templates/get', {}).then((r) => {
+			const go = () => apiPost('api/templates/get', {}).then((r) => {
 				if (r.status === 'success') { toast('Templates copied'); refreshSetupKeepPanel() } else { toast(r.data.message, true) }
 			})
+			const msg = t('batch', 'This copies the default job templates into your work folder and overwrites any existing templates with the same names. Continue?')
+			if (window.OC && OC.dialogs && OC.dialogs.confirm) {
+				OC.dialogs.confirm(msg, t('batch', 'Copy job templates'), (ok) => { if (ok) { go() } })
+			} else if (window.confirm(msg)) {
+				go()
+			}
 		})
 		$('#batch-setup-link').addEventListener('click', (e) => {
 			e.preventDefault()
@@ -222,11 +228,41 @@
 		return 'batch-st-other'
 	}
 
+	let allJobs = []
+
 	function loadJobs() {
 		apiGet('api/jobs').then((r) => {
-			if (r.status !== 'success') { toast(r.data.message, true); renderJobs([]); return }
-			renderJobs(r.data || [])
+			allJobs = (r.status === 'success' && Array.isArray(r.data)) ? r.data : []
+			if (r.status !== 'success') { toast(r.data.message, true) }
+			applyJobFilter()
 		})
+	}
+
+	function currentUid() {
+		if (window.OC && typeof OC.getCurrentUser === 'function') { return (OC.getCurrentUser() || {}).uid || '' }
+		return (window.OC && OC.currentUser) || ''
+	}
+	// Owner username from a job's userInfo DN (/CN=<uid>/O=… or CN=<uid>,O=…).
+	function jobOwner(job) {
+		const m = String(job.userInfo || '').match(/CN=([^,/]+)/i)
+		return m ? m[1].trim() : ''
+	}
+	function ownsJob(job) {
+		const u = currentUid()
+		return u !== '' && jobOwner(job) === u
+	}
+
+	// Client-side filter over the full list: text match + "my jobs only".
+	function applyJobFilter() {
+		const q = ($('#batch-filter').value || '').trim().toLowerCase()
+		const mineOnly = $('#batch-mine-only').checked
+		const rows = allJobs.filter((j) => {
+			if (mineOnly && !ownsJob(j)) { return false }
+			if (q === '') { return true }
+			return (String(j.name || '') + ' ' + String(j.identifier || '') + ' '
+				+ String(j.csStatus || '') + ' ' + String(j.userInfo || '')).toLowerCase().indexOf(q) !== -1
+		})
+		renderJobs(rows)
 	}
 
 	function renderJobs(jobs) {
@@ -235,13 +271,18 @@
 		$('#batch-jobs-empty').hidden = jobs.length > 0
 		jobs.forEach((job) => {
 			const id = job.identifier || ''
+			const mine = ownsJob(job)
 			const tr = document.createElement('tr')
 
+			// Only the job's owner may select/delete it.
 			const tdC = document.createElement('td')
-			const cb = document.createElement('input')
-			cb.type = 'checkbox'; cb.className = 'batch-job-check'; cb.dataset.id = id
-			cb.addEventListener('change', updateDeleteBtn)
-			tdC.appendChild(cb); tr.appendChild(tdC)
+			if (mine) {
+				const cb = document.createElement('input')
+				cb.type = 'checkbox'; cb.className = 'batch-job-check'; cb.dataset.id = id
+				cb.addEventListener('change', updateDeleteBtn)
+				tdC.appendChild(cb)
+			}
+			tr.appendChild(tdC)
 
 			const tdId = document.createElement('td')
 			tdId.className = 'batch-col-id'; tdId.title = id; tdId.textContent = shortId(id)
@@ -262,10 +303,14 @@
 			const more = document.createElement('button')
 			more.className = 'button batch-icon'; more.textContent = '⋯'; more.title = 'Inspect'
 			more.addEventListener('click', () => openInspect(job))
-			const del = document.createElement('button')
-			del.className = 'button batch-icon'; del.textContent = '🗑'; del.title = 'Delete'
-			del.addEventListener('click', () => deleteJobs([id]))
-			tdAct.appendChild(more); tdAct.appendChild(del); tr.appendChild(tdAct)
+			tdAct.appendChild(more)
+			if (mine) {
+				const del = document.createElement('button')
+				del.className = 'button batch-icon icon-delete'; del.title = 'Delete'
+				del.addEventListener('click', () => deleteJobs([id]))
+				tdAct.appendChild(del)
+			}
+			tr.appendChild(tdAct)
 
 			body.appendChild(tr)
 		})
@@ -296,6 +341,8 @@
 			$$('.batch-job-check').forEach((c) => { c.checked = e.target.checked })
 			updateDeleteBtn()
 		})
+		$('#batch-filter').addEventListener('input', applyJobFilter)
+		$('#batch-mine-only').addEventListener('change', applyJobFilter)
 	}
 
 	// -------------------------------------------------------------- inspect

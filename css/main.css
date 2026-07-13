@@ -220,3 +220,14 @@
 .batch-setup-body {
 	padding: 16px;
 }
+
+.batch-filter {
+	width: 180px;
+}
+.batch-mine-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	white-space: nowrap;
+	color: var(--color-text-maxcontrast, #767676);
+}
