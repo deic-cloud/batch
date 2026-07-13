@@ -146,8 +146,15 @@ class SetupService {
 			$srcPath = $srcDir . '/' . $entry;
 			if (is_dir($srcPath)) {
 				$this->copyTree($srcPath, $this->ensureFolder($dstFolder, $entry));
-			} elseif (!$dstFolder->nodeExists($entry)) {
-				$dstFolder->newFile($entry, (string)file_get_contents($srcPath));
+			} else {
+				// Overwrite existing templates (as the UI states) so re-copying
+				// refreshes them to the current bundled versions.
+				$content = (string)file_get_contents($srcPath);
+				if ($dstFolder->nodeExists($entry)) {
+					$dstFolder->get($entry)->putContent($content);
+				} else {
+					$dstFolder->newFile($entry, $content);
+				}
 			}
 		}
 	}
