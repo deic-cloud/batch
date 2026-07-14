@@ -55,10 +55,15 @@
 				<div class="batch-editor-row">
 					<label for="batch-script-select"><?php p($l->t('Template / script')); ?>:</label>
 					<select id="batch-script-select"><option value=""><?php p($l->t('— choose —')); ?></option></select>
-					<label for="batch-input-file"><?php p($l->t('Input file')); ?>:</label>
-					<input type="text" id="batch-input-file" placeholder="<?php p($l->t('optional path in your files, e.g. /data/in.mp4')); ?>" />
 				</div>
-				<textarea id="batch-script-text" spellcheck="false" placeholder="#!/bin/bash&#10;#GRIDFACTORY -n my_job&#10;echo hello"></textarea>
+				<div class="batch-editor-row">
+					<label for="batch-input-file" title="<?php p($l->t('Each input file is submitted as a separate job.')); ?>"><?php p($l->t('Input files')); ?>:</label>
+					<input type="text" id="batch-input-file" placeholder="<?php p($l->t('path in your files, e.g. /data/in.txt')); ?>" />
+					<button id="batch-add-input" class="button"><?php p($l->t('Add')); ?></button>
+					<button id="batch-browse-input" class="button"><?php p($l->t('Browse…')); ?></button>
+				</div>
+				<div id="batch-input-chips" class="batch-input-chips"></div>
+				<textarea id="batch-script-text" spellcheck="false"></textarea>
 				<div class="batch-editor-actions">
 					<button id="batch-submit" class="primary"><?php p($l->t('Submit')); ?></button>
 					<button id="batch-save-script" class="button"><?php p($l->t('Save script')); ?></button>

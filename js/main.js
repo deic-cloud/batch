@@ -175,11 +175,52 @@
 		})
 	}
 
+	// Real starter script (shown as editable content, not a placeholder).
+	const STARTER_SCRIPT =
+		'#!/bin/bash\n' +
+		'#GRIDFACTORY -n my_job\n' +
+		'#GRIDFACTORY -s MY_SSL_DN\n' +
+		'\n' +
+		'echo hello\n'
+
+	let inputFiles = []
+
+	function renderInputChips() {
+		const box = $('#batch-input-chips')
+		box.innerHTML = ''
+		inputFiles.forEach((path, i) => {
+			const chip = document.createElement('span')
+			chip.className = 'batch-input-chip'
+			chip.textContent = path
+			const x = document.createElement('button')
+			x.type = 'button'; x.className = 'batch-input-chip-x'; x.textContent = '✕'; x.title = t('batch', 'Remove')
+			x.addEventListener('click', () => { inputFiles.splice(i, 1); renderInputChips() })
+			chip.appendChild(x)
+			box.appendChild(chip)
+		})
+	}
+
+	function addInput(path) {
+		path = (path || '').trim()
+		if (path && inputFiles.indexOf(path) === -1) { inputFiles.push(path); renderInputChips() }
+		$('#batch-input-file').value = ''
+	}
+
+	// Selected chips plus any typed-but-not-added path. Each file → its own job.
+	function gatherInputs() {
+		const arr = inputFiles.slice()
+		const typed = $('#batch-input-file').value.trim()
+		if (typed && arr.indexOf(typed) === -1) { arr.push(typed) }
+		return arr
+	}
+
 	function openEditor() {
 		$('#batch-editor').hidden = false
-		$('#batch-script-text').value = ''
+		$('#batch-script-text').value = STARTER_SCRIPT
 		$('#batch-script-select').value = ''
 		$('#batch-input-file').value = ''
+		inputFiles = []
+		renderInputChips()
 		$('#batch-script-text').focus()
 	}
 
@@ -193,6 +234,21 @@
 				if (r.status === 'success') { $('#batch-script-text').value = r.data || '' } else { toast(r.data.message, true) }
 			})
 		})
+		$('#batch-add-input').addEventListener('click', () => addInput($('#batch-input-file').value))
+		$('#batch-input-file').addEventListener('keydown', (e) => {
+			if (e.key === 'Enter') { e.preventDefault(); addInput($('#batch-input-file').value) }
+		})
+		$('#batch-browse-input').addEventListener('click', () => {
+			if (!window.OC || !OC.dialogs || !OC.dialogs.filepicker) { return }
+			OC.dialogs.filepicker(
+				t('batch', 'Choose input file(s)'),
+				(paths) => { (Array.isArray(paths) ? paths : [paths]).forEach(addInput) },
+				true,   // multiselect
+				'',     // any file type
+				true,   // modal
+				OC.dialogs.FILEPICKER_TYPE_CHOOSE
+			)
+		})
 		$('#batch-save-script').addEventListener('click', () => {
 			const path = $('#batch-script-select').value
 			if (!path) { toast('Choose a script slot first (or use a template path).', true); return }
@@ -201,13 +257,12 @@
 			})
 		})
 		$('#batch-submit').addEventListener('click', () => {
-			const text = $('#batch-script-text').value
-			const inputFile = $('#batch-input-file').value.trim()
-			const params = { script_text: text }
-			if (inputFile) { params.input_files = JSON.stringify([inputFile]) }
+			const inputs = gatherInputs()
+			const params = { script_text: $('#batch-script-text').value }
+			if (inputs.length) { params.input_files = JSON.stringify(inputs) }
 			apiPost('api/job', params).then((r) => {
 				if (r.status === 'success') {
-					toast('Submitted')
+					toast(inputs.length > 1 ? (inputs.length + ' jobs submitted') : 'Submitted')
 					$('#batch-editor').hidden = true
 					loadJobs()
 					// the batch service registers the job a moment after upload;
