@@ -152,8 +152,12 @@ class BatchService {
 
 		// The worker stages files over WebDAV against the user's home server;
 		// Nextcloud serves each user's files at /remote.php/dav/files/<uid>.
-		$davBase = $homeServerUrl !== '' ? $homeServerUrl . '/remote.php/dav/files/' . $uid : '';
-		$workFolderUrl = $davBase !== '' ? $davBase . $workFolder : '';
+		// Keep the trailing slash on the base and strip leading slashes off the
+		// folder/file parts so the join is correct whether or not the caller
+		// passed leading slashes (otherwise ".../files/alice" + "Batch/…" would
+		// yield ".../files/aliceBatch/…").
+		$davBase = $homeServerUrl !== '' ? $homeServerUrl . '/remote.php/dav/files/' . $uid . '/' : '';
+		$workFolderUrl = $davBase !== '' ? $davBase . ltrim($workFolder, '/') : '';
 		$subs = [
 			'WORK_FOLDER_URL'        => $workFolderUrl,
 			'HOME_SERVER_PRIVATE_URL' => $homeServerUrl,
@@ -161,7 +165,7 @@ class BatchService {
 			'SD_USER'                => $uid,
 		];
 		if ($inputFile !== null && $inputFile !== '') {
-			$inputFileUrl   = $davBase . $inputFile;
+			$inputFileUrl   = $davBase . ltrim($inputFile, '/');
 			$inputFolderUrl = preg_replace('|/[^/]+$|', '/', $inputFileUrl) ?? $inputFileUrl;
 			$inputFilename  = basename($inputFile);
 			$inputBasename  = preg_replace('|\.[^.]+$|', '', $inputFilename) ?? $inputFilename;
