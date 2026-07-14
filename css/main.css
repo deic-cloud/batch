@@ -151,8 +151,17 @@
 	min-width: 36px;
 	height: 32px;
 	padding: 0;
-	margin-left: 4px;
+	margin-left: 8px;
 	line-height: 1;
+	/* Center the glyph (⋯) and the background icon (icon-delete) alike, and
+	   align both boxes by their middle so the text button and the image button
+	   sit level — a plain <button> defaults to baseline, which floats the
+	   background-image trash icon higher than the ⋯ text. */
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	vertical-align: middle;
+	background-position: center;
 }
 
 /* inspect modal */
