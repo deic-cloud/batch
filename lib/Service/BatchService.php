@@ -268,7 +268,7 @@ class BatchService {
 		}
 		if ($code >= 400) {
 			$this->logger->error("batch: {$method} {$url} -> HTTP {$code}", ['app' => 'batch']);
-			throw new BatchServiceException("Batch service returned HTTP {$code}" . ($code === 401 || $code === 403 ? ' (not authorised — is your certificate in a VO?)' : ''), $code);
+			throw new BatchServiceException("Batch service returned HTTP {$code}" . ($code === 401 || $code === 403 ? ' (not authorised — you may not own this job, or your certificate is not in a required VO)' : ''), $code);
 		}
 		return (string)$data;
 	}
