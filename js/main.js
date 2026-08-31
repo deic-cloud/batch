@@ -362,15 +362,14 @@
 				more.className = 'button batch-icon'; more.textContent = '⋯'; more.title = 'Inspect'
 				more.addEventListener('click', () => openInspect(job))
 				tdAct.appendChild(more)
-				// Kill: only for a running job — stops it but keeps the files so
-				// stdout/stderr stay inspectable (delete removes the whole job).
-				if ((job.csStatus || '').startsWith('running')) {
-					const kill = document.createElement('button')
-					kill.className = 'button batch-icon batch-icon-kill'; kill.textContent = '\u25A0'
-					kill.title = 'Kill (stop the running job; keeps output for inspection)'
-					kill.addEventListener('click', () => killJobs([id]))
-					tdAct.appendChild(kill)
-				}
+				// Kill: stop a running job but KEEP its files so stdout/stderr stay
+				// inspectable (delete removes the whole job). Always shown next to
+				// the trash; the server no-ops a job that's already finished.
+				const kill = document.createElement('button')
+				kill.className = 'button batch-icon batch-icon-kill'; kill.textContent = '\u25A0'
+				kill.title = 'Kill (stop the job; keeps output for inspection)'
+				kill.addEventListener('click', () => killJobs([id]))
+				tdAct.appendChild(kill)
 				const del = document.createElement('button')
 				del.className = 'button batch-icon icon-delete'; del.title = 'Delete'
 				del.addEventListener('click', () => deleteJobs([id]))

@@ -217,7 +217,32 @@ class BatchService {
 	 * on running jobs.
 	 */
 	public function killJob(string $uid, string $identifier): void {
-		$this->request($uid, 'PUT', $this->apiUrl . 'db/jobs/' . rawurlencode($this->shortId($identifier)), 'csStatus: running:requestKill');
+		$id = $this->shortId($identifier);
+		// Decide the target status from the job's current one, mirroring the
+		// GridFactory CLI killJob(): a running-ish job is asked to be killed
+		// (process stops, files kept); a still-queued job is aborted; a finished
+		// job is a no-op. GridFactory only lets csStatus change.
+		$status = '';
+		try {
+			$text = $this->request($uid, 'GET', $this->apiUrl . 'db/jobs/' . rawurlencode($id) . '/');
+			foreach (explode("\n", $text) as $line) {
+				if (str_starts_with($line, 'csStatus: ')) {
+					$status = trim(substr($line, 10));
+					break;
+				}
+			}
+		} catch (BatchServiceException) {
+			// fall through — treat as running (best effort)
+		}
+		$target = '';
+		if ($status === '' || str_starts_with($status, 'running') || str_starts_with($status, 'prepared') || str_starts_with($status, 'paused')) {
+			$target = 'running:requestKill';
+		} elseif (str_starts_with($status, 'ready') || str_starts_with($status, 'defined')) {
+			$target = 'aborted';
+		} else {
+			return; // done / failed / aborted — nothing to kill
+		}
+		$this->request($uid, 'PUT', $this->apiUrl . 'db/jobs/' . rawurlencode($id), 'csStatus: ' . $target);
 	}
 
 	/** Fetch an arbitrary job file (stdout/stderr/script/output) with the user's cert. */
