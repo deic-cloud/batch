@@ -164,8 +164,8 @@
 
 	// --------------------------------------------------------------- editor
 
-	function loadScripts() {
-		apiGet('api/scripts').then((r) => {
+	function loadScripts(selectPath) {
+		return apiGet('api/scripts').then((r) => {
 			const scripts = (r.status === 'success' && Array.isArray(r.data)) ? r.data : []
 			const sel = $('#batch-script-select')
 			sel.innerHTML = '<option value="">— choose —</option>'
@@ -175,8 +175,13 @@
 				o.textContent = p.replace(/^.*?\/job_templates\//, '').replace(/\/job_templates\//, '/')
 				sel.appendChild(o)
 			})
+			if (selectPath) { sel.value = selectPath }
 		})
 	}
+
+	// Kill icon — MDI stop-circle-outline (a stop square framed in a circle, so it
+	// reads as a control, not a missing glyph). Inline SVG, currentColor.
+	const KILL_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="vertical-align:middle;fill:currentColor"><path d="M23,12A11,11 0 0,1 12,23A11,11 0 0,1 1,12A11,11 0 0,1 12,1A11,11 0 0,1 23,12M21,12A9,9 0 0,0 12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A9,9 0 0,0 21,12M9,9H15V15H9V9Z"/></svg>'
 
 	// Real starter script (shown as editable content, not a placeholder).
 	const STARTER_SCRIPT =
@@ -263,7 +268,7 @@
 				path = workFolder + '/' + name.trim().replace(/^\/+/, '')
 			}
 			apiPost('api/script', { path, text: $('#batch-script-text').value }).then((r) => {
-				if (r.status === 'success') { toast('Saved to ' + path); loadScripts() } else { toast(r.data.message, true) }
+				if (r.status === 'success') { toast('Saved to ' + path); loadScripts(path) } else { toast(r.data.message, true) }
 			})
 		})
 		$('#batch-submit').addEventListener('click', () => {
@@ -376,7 +381,7 @@
 				// inspectable (delete removes the whole job). Always shown next to
 				// the trash; the server no-ops a job that's already finished.
 				const kill = document.createElement('button')
-				kill.className = 'button batch-icon batch-icon-kill'; kill.textContent = '\u25A0'
+				kill.className = 'button batch-icon batch-icon-kill'; kill.innerHTML = KILL_SVG
 				const running = (job.csStatus || '').startsWith('running')
 				kill.disabled = !running
 				kill.title = running
