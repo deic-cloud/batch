@@ -22,6 +22,7 @@ return [
 		['name' => 'api#jobInfo',  'url' => '/api/job',         'verb' => 'GET'],
 		['name' => 'api#submit',   'url' => '/api/job',         'verb' => 'POST'],
 		['name' => 'api#delete',   'url' => '/api/jobs/delete', 'verb' => 'POST'],
+		['name' => 'api#kill',     'url' => '/api/jobs/kill',   'verb' => 'POST'],
 		['name' => 'api#file',     'url' => '/api/job/file',    'verb' => 'GET'],
 	],
 ];

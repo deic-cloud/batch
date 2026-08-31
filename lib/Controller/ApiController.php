@@ -182,6 +182,22 @@ class ApiController extends Controller {
 	}
 
 	#[NoAdminRequired]
+	public function kill(string $identifiers = ''): JSONResponse {
+		$ids = json_decode($identifiers, true);
+		if (!is_array($ids) || $ids === []) {
+			return $this->fail('No job specified.');
+		}
+		try {
+			foreach ($ids as $id) {
+				$this->batch->killJob($this->uid(), (string)$id);
+			}
+			return $this->ok();
+		} catch (BatchServiceException $e) {
+			return $this->fail($e->getMessage(), Http::STATUS_BAD_GATEWAY);
+		}
+	}
+
+	#[NoAdminRequired]
 	public function file(string $identifier = '', string $filename = '', string $status = '', string $download = ''): JSONResponse|DataDownloadResponse {
 		if ($identifier === '' || $filename === '') {
 			return $this->fail('Job and filename required.');

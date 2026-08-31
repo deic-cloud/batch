@@ -270,3 +270,7 @@
 	padding: 2px 4px;
 	color: var(--color-text-maxcontrast, #767676);
 }
+
+/* Kill button — a stop square, distinct from the trash (red on hover). */
+.batch-icon-kill { color: var(--color-text-maxcontrast, #888); }
+.batch-icon-kill:hover { color: var(--color-error-text, #8A0000); }

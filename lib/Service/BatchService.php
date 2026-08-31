@@ -206,6 +206,20 @@ class BatchService {
 		}
 	}
 
+	/**
+	 * Request a running job be KILLED. Unlike deleteJob (which removes the job
+	 * directory), this only sets csStatus to "running:requestKill" — the
+	 * queuemanager daemon stops the process but LEAVES the job and its files,
+	 * so stdout/stderr stay inspectable (e.g. to see why a job ran too long).
+	 * GridFactory only allows csStatus to change (mod_gridfactory), so this is
+	 * the same PUT shape as requestJobOutput. A queued/ready job is not
+	 * "running" and is removed with deleteJob instead; the UI only offers Kill
+	 * on running jobs.
+	 */
+	public function killJob(string $uid, string $identifier): void {
+		$this->request($uid, 'PUT', $this->apiUrl . 'db/jobs/' . rawurlencode($this->shortId($identifier)), 'csStatus: running:requestKill');
+	}
+
 	/** Fetch an arbitrary job file (stdout/stderr/script/output) with the user's cert. */
 	public function getContent(string $uid, string $url): string {
 		return $this->request($uid, 'GET', $url);
