@@ -76,6 +76,8 @@
 
 	// ----------------------------------------------------------------- setup
 
+	let workFolder = 'Batch'
+
 	function populateSetup(status) {
 		const nofs = !status.filesSharding
 		$('#batch-setup-nofs').hidden = !nofs
@@ -85,6 +87,7 @@
 			: 'none yet'
 		$('#batch-gen-cert').textContent = status.hasCert ? 'Regenerate' : 'Generate certificate'
 		$('#batch-workfolder').value = status.workFolder || '/Batch'
+		workFolder = (status.workFolder || 'Batch').replace(/^\/+|\/+$/g, '') || 'Batch'
 	}
 
 	// Setup is a modal overlaid on the main (jobs) view.
@@ -250,10 +253,17 @@
 			)
 		})
 		$('#batch-save-script').addEventListener('click', () => {
-			const path = $('#batch-script-select').value
-			if (!path) { toast('Choose a script slot first (or use a template path).', true); return }
+			// Saving is OPTIONAL — Submit uses the editor text directly. Save only
+			// persists a reusable script: overwrite the selected one, or, with
+			// nothing selected, save a new file into your work folder.
+			let path = $('#batch-script-select').value
+			if (!path) {
+				const name = window.prompt('Save this script as (filename in ' + workFolder + '/):', 'my_job.sh')
+				if (!name) { return }
+				path = workFolder + '/' + name.trim().replace(/^\/+/, '')
+			}
 			apiPost('api/script', { path, text: $('#batch-script-text').value }).then((r) => {
-				toast(r.status === 'success' ? 'Saved' : r.data.message, r.status !== 'success')
+				if (r.status === 'success') { toast('Saved to ' + path); loadScripts() } else { toast(r.data.message, true) }
 			})
 		})
 		$('#batch-submit').addEventListener('click', () => {
@@ -367,8 +377,12 @@
 				// the trash; the server no-ops a job that's already finished.
 				const kill = document.createElement('button')
 				kill.className = 'button batch-icon batch-icon-kill'; kill.textContent = '\u25A0'
-				kill.title = 'Kill (stop the job; keeps output for inspection)'
-				kill.addEventListener('click', () => killJobs([id]))
+				const running = (job.csStatus || '').startsWith('running')
+				kill.disabled = !running
+				kill.title = running
+					? 'Kill (stop the job; keeps output for inspection)'
+					: 'Kill — only a running job can be killed'
+				kill.addEventListener('click', () => { if (running) { killJobs([id]) } })
 				tdAct.appendChild(kill)
 				const del = document.createElement('button')
 				del.className = 'button batch-icon icon-delete'; del.title = 'Delete'
