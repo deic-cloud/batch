@@ -279,10 +279,19 @@
 				if (r.status === 'success') {
 					toast(inputs.length > 1 ? (inputs.length + ' jobs submitted') : 'Submitted')
 					$('#batch-editor').hidden = true
+					// Optimistic rows: the daemon registers the job(s) a few seconds
+					// after upload, so show them immediately as 'waiting'.
+					const name = (($('#batch-script-text').value.match(/#GRIDFACTORY\s+-n\s+(\S+)/) || [])[1]) || 'job'
+					const ids = Array.isArray(r.data && r.data.jobs) ? r.data.jobs : []
+					const owner = '/CN=' + currentUid() + '/O=x'
+					ids.forEach((jid) => {
+						const sid = shortJobId(jid)
+						pendingJobs[sid] = { identifier: jid, name, csStatus: 'waiting', userInfo: owner, _pending: true }
+					})
+					if (!ids.length) { pendingJobs['_p' + Date.now()] = { identifier: '', name, csStatus: 'waiting', userInfo: owner, _pending: true } }
 					loadJobs()
-					// the batch service registers the job a moment after upload;
-					// refresh again so it shows up without a manual reload
 					window.setTimeout(loadJobs, 2500)
+					window.setTimeout(loadJobs, 6000)
 				} else { toast(r.data.message, true) }
 			})
 		})
@@ -335,14 +344,32 @@
 		renderJobs(rows)
 	}
 
-	function renderJobs(jobs) {
+	// Jobs just submitted, shown immediately with a 'waiting' status until the
+	// spoolmanager daemon registers them (a few seconds) — like user_pods'
+	// optimistic insert. Keyed by short job id; dropped once the server lists them.
+	const pendingJobs = {}
+	function shortJobId(idOrUrl) { return String(idOrUrl || '').replace(/\/+$/, '').split('/').pop() }
+
+	function mergePending(jobs) {
+		const seen = {}
+		jobs.forEach((j) => { seen[shortJobId(j.identifier)] = true })
+		Object.keys(pendingJobs).forEach((sid) => {
+			if (seen[sid]) { delete pendingJobs[sid] } // real row arrived
+		})
+		return Object.values(pendingJobs).concat(jobs)
+	}
+
+	function renderJobs(jobsIn) {
+		const jobs = mergePending(jobsIn)
+
 		const body = $('#batch-jobs-body')
 		body.innerHTML = ''
 		$('#batch-jobs-empty').hidden = jobs.length > 0
 		jobs.forEach((job) => {
 			const id = job.identifier || ''
-			const mine = ownsJob(job)
+			const mine = job._pending ? true : ownsJob(job)
 			const tr = document.createElement('tr')
+			if (job._pending) { tr.classList.add('batch-pending') }
 
 			// Only the job's owner may select/delete it.
 			const tdC = document.createElement('td')

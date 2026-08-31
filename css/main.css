@@ -276,3 +276,6 @@
 .batch-icon-kill:hover { color: var(--color-error-text, #8A0000); }
 .batch-icon:disabled { opacity: .35; cursor: default; }
 .batch-icon-kill:disabled:hover { color: var(--color-text-maxcontrast, #888); }
+
+/* Optimistic just-submitted job rows: subtle until the daemon registers them. */
+.batch-pending { opacity: .6; font-style: italic; }
