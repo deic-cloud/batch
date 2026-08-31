@@ -77,6 +77,8 @@ cert lives in `<uid>/files_sharding_ssl/` (generated from the Setup panel).
   old ownCloud app). Verified working 2026-08-31.
 - **Request fresh output** (running job): `PUT db/jobs/<id>` with
   `csStatus: running:requestOutput`.
+- **Kill** (running job): `PUT db/jobs/<id>` with `csStatus: running:requestKill`
+  — stops the process, keeps the directory (output stays inspectable).
 - **Files:** stdout / stderr / the job script / declared outputs are fetched by
   URL built server-side from the job id + filename (so a client can't aim the
   user's cert at an arbitrary host).
@@ -89,11 +91,19 @@ and placeholders the app substitutes at submit time: `IN_FILE_URL`,
 `WORK_FOLDER_URL`, `-n` (job name), `-o` (output filename + destination),
 `-v` (VO restricting who may run). 13 templates ship in `job_templates/`.
 
+## Kill vs. Delete
+
+- **Delete** removes the whole job (`DELETE gridfactory/jobs/<id>` — the
+  physical directory).
+- **Kill** (running jobs only) sets `csStatus: running:requestKill` (`PUT
+  db/jobs/<id>`) — the queuemanager stops the process but **leaves** the job
+  and its files, so stdout/stderr stay inspectable (e.g. to see why a job ran
+  too long). Mechanism per the CLI `PKill` / `killJob`
+  (running→`running:requestKill`, ready→`aborted`); the UI offers Kill only on
+  running jobs. An improvement over the old ScienceData app, which had no kill.
+
 ## Not yet implemented
 
-- **Kill** (CLI `PKill`): kill a running job's process while leaving its
-  directory intact so stdout/stderr stay inspectable — useful for a runaway
-  job. The old ScienceData app never had it; a candidate addition.
 - Files **"Process" action** (pick a file → choose a template → submit) —
   deferred to v0.2 (needs the `registerFileAction` webpack build).
 
