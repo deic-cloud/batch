@@ -50,8 +50,19 @@ class BatchService {
 		}
 	}
 
-	/** The user's certificate subject as the batch service matches it. */
+	/**
+	 * The user's certificate subject in GridFactory's slash form
+	 * ("/CN=alice/O=sciencedata.dk" - what its own client writes with
+	 * #GRIDFACTORY -s, Util.getDN), read from the actual certificate.
+	 */
 	public function dn(string $uid): string {
+		try {
+			$name = (string)(openssl_x509_parse($this->cert->certPem($uid))['name'] ?? '');
+			if ($name !== '') {
+				return $name;
+			}
+		} catch (\Throwable) {
+		}
 		return "/CN={$uid}/O={$this->org}";
 	}
 
@@ -84,9 +95,12 @@ class BatchService {
 	 * @return list<array<string,string>>
 	 */
 	public function getJobs(string $uid): array {
-		// Returns the full job listing the batch service exposes to the caller
-		// (it authorises the request by the presented client certificate).
+		// The batch service lists every job it holds; the caller's are those whose
+		// userInfo (the DN stamped at submission) is theirs. Filtered here rather than
+		// with ?userInfo=, which mod_gridfactory pastes into SQL unescaped. Access to a
+		// job itself is still decided by the server (per-job GACL on the verified DN).
 		$text = $this->request($uid, 'GET', $this->apiUrl . 'db/jobs/?format=text');
+		$mine = $this->dn($uid);
 		$lines = explode("\n", trim($text));
 		if (count($lines) < 1 || $lines[0] === '') {
 			return [];
@@ -101,6 +115,9 @@ class BatchService {
 			$row = [];
 			foreach ($keys as $i => $key) {
 				$row[$key] = $vals[$i] ?? '';
+			}
+			if (($row['userInfo'] ?? '') !== $mine) {
+				continue;
 			}
 			$jobs[] = $row;
 		}
@@ -144,10 +161,22 @@ class BatchService {
 		// then no longer matches the dir ("could not prepare job").
 		$jobId = $this->apiUrl . 'gridfactory/jobs/' . $this->uuid();
 
-		// Stamp the job's own id and substitute the template placeholders.
+		// Stamp the job's own id and the submitter's DN (#GRIDFACTORY -s, as
+		// GridFactory's own client does) - the spoolmanager records it as the job's
+		// userInfo. Any -s line in the script is dropped: a job is labelled with its
+		// real submitter only.
+		$scriptText = preg_replace('/^#GRIDFACTORY[ \t]+-s\b.*\R?/m', '', $scriptText);
+		$dn = $this->dn($uid);
 		$pos = strpos($scriptText, '#GRIDFACTORY');
 		if ($pos !== false) {
-			$scriptText = substr_replace($scriptText, "#GRIDFACTORY -u {$jobId}\n#GRIDFACTORY", $pos, strlen('#GRIDFACTORY'));
+			$scriptText = substr_replace($scriptText, "#GRIDFACTORY -u {$jobId}\n#GRIDFACTORY -s {$dn}\n#GRIDFACTORY", $pos, strlen('#GRIDFACTORY'));
+		} else {
+			// No directives of its own: stamp them after the shebang (or at the top).
+			$stamp = "#GRIDFACTORY -u {$jobId}\n#GRIDFACTORY -s {$dn}\n";
+			$nl = strpos($scriptText, "\n");
+			$scriptText = str_starts_with($scriptText, '#!') && $nl !== false
+				? substr($scriptText, 0, $nl + 1) . $stamp . substr($scriptText, $nl + 1)
+				: $stamp . $scriptText;
 		}
 
 		// The worker stages files over WebDAV against the user's home server;
