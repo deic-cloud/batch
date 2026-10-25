@@ -179,13 +179,16 @@ class BatchService {
 				: $stamp . $scriptText;
 		}
 
-		// The worker stages files over WebDAV against the user's home server;
-		// Nextcloud serves each user's files at /remote.php/dav/files/<uid>.
+		// The batch server stages files over WebDAV against the user's home
+		// server through /grid/ (rewritten to /remote.php/webdav/), the location
+		// that asks for a client certificate: the server presents its own
+		// certificate and names the job's owner in the SSL-CLIENT-DN header
+		// (files_sharding X509Backend, trusted daemon). /remote.php/dav/files/<uid>
+		// asks for no certificate, so the server cannot authenticate there.
 		// Keep the trailing slash on the base and strip leading slashes off the
 		// folder/file parts so the join is correct whether or not the caller
-		// passed leading slashes (otherwise ".../files/alice" + "Batch/…" would
-		// yield ".../files/aliceBatch/…").
-		$davBase = $homeServerUrl !== '' ? $homeServerUrl . '/remote.php/dav/files/' . $uid . '/' : '';
+		// passed leading slashes.
+		$davBase = $homeServerUrl !== '' ? $homeServerUrl . '/grid/' : '';
 		$workFolderUrl = $davBase !== '' ? $davBase . ltrim($workFolder, '/') : '';
 		$subs = [
 			'WORK_FOLDER_URL'        => $workFolderUrl,

@@ -15,4 +15,4 @@
 #
 ################################################
 
-pdfsig IN_FILENAME_RAW
+pdfsig 'IN_FILENAME_RAW'

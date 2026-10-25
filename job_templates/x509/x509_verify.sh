@@ -16,21 +16,16 @@
 # Batch system directives
 #
 #GRIDFACTORY -i IN_FILE_URL
+#GRIDFACTORY -i IN_FILE_URL.sig
+#GRIDFACTORY -i IN_FOLDER_URLusercert.pem
 #GRIDFACTORY -r UTIL/OpenSSL
 #GRIDFACTORY -n VERIFY-IN_FILENAME
 #GRIDFACTORY -s MY_SSL_DN
 #
 ################################################
 
-# This would get the current user's usercert.pem - we need the one
-# corresponding to the key that signed the file.
-#curl --insecure HOME_SERVER_PRIVATE_URL/index.php/apps/files_sharding/x509/cert > usercert.pem
-
-# Fetch the signature file
-curl --insecure "IN_FILE_URL.sig" > "IN_FILENAME_RAW.sig"
-
-# Fetch the public certificate
-curl --insecure "IN_FOLDER_URL/usercert.pem" > "usercert.pem"
+# The signature file and the signer's certificate are staged in next to
+# the input file by the -i directives above.
 
 # Extract public key
 openssl x509 -pubkey -in usercert.pem -nocert > pubkey.pem

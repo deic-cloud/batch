@@ -56,8 +56,6 @@ EOF
 
 sed -i "s|HELPER|$helper|" settings.py
 
-# Install dependencies
-
 # Run ffmpeg
 
 python3 -c "

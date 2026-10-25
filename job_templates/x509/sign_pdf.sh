@@ -4,7 +4,7 @@
 #
 # Sign a PDF file using your ScienceData RSA private key.
 # The signed file will be delivered back next to your
-# input file - with ".sig" appended to the basename.
+# input file - with ".signed" appended to the basename.
 # E.g. an input file "myfile.pdf" will result in a file
 # "myfile.signed.pdf" delivered next to the input file.
 # Notice: This template has the batch directive -v MY_SSL_DN,
