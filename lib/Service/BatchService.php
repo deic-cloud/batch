@@ -193,11 +193,14 @@ class BatchService {
 		// certificate and names the job's owner in the SSL-CLIENT-DN header
 		// (files_sharding X509Backend, trusted daemon). /remote.php/dav/files/<uid>
 		// asks for no certificate, so the server cannot authenticate there.
-		// Keep the trailing slash on the base and strip leading slashes off the
-		// folder/file parts so the join is correct whether or not the caller
-		// passed leading slashes.
 		$davBase = $homeServerUrl !== '' ? $homeServerUrl . '/grid/' : '';
-		$workFolderUrl = $davBase !== '' ? $davBase . ltrim($workFolder, '/') : '';
+		// Paths come in raw (as shown in Files: "Templates credits.md"). URLs get
+		// each segment percent-encoded - a raw space would split the #GRIDFACTORY
+		// -i/-o directive. IN_FILENAME/IN_BASENAME are the encoded forms (the names
+		// that are safe in directives); the _RAW forms are the real names, which
+		// is what the staged input file is called on the worker.
+		$enc = static fn (string $path): string => implode('/', array_map('rawurlencode', explode('/', trim($path, '/'))));
+		$workFolderUrl = $davBase !== '' ? $davBase . $enc($workFolder) : '';
 		$subs = [
 			'WORK_FOLDER_URL'        => $workFolderUrl,
 			'HOME_SERVER_PRIVATE_URL' => $homeServerPrivateUrl !== '' ? $homeServerPrivateUrl : $homeServerUrl,
@@ -208,17 +211,17 @@ class BatchService {
 			'SD_USER'                => $uid,
 		];
 		if ($inputFile !== null && $inputFile !== '') {
-			$inputFileUrl   = $davBase . ltrim($inputFile, '/');
+			$inputFileUrl   = $davBase . $enc($inputFile);
 			$inputFolderUrl = preg_replace('|/[^/]+$|', '/', $inputFileUrl) ?? $inputFileUrl;
-			$inputFilename  = basename($inputFile);
-			$inputBasename  = preg_replace('|\.[^.]+$|', '', $inputFilename) ?? $inputFilename;
+			$rawFilename    = basename($inputFile);
+			$rawBasename    = preg_replace('|\.[^.]+$|', '', $rawFilename) ?? $rawFilename;
 			$subs += [
-				'IN_FILENAME_RAW' => rawurldecode($inputFilename),
-				'IN_BASENAME_RAW' => rawurldecode($inputBasename),
+				'IN_FILENAME_RAW' => $rawFilename,
+				'IN_BASENAME_RAW' => $rawBasename,
 				'IN_FILE_URL'     => $inputFileUrl,
 				'IN_FOLDER_URL'   => $inputFolderUrl,
-				'IN_FILENAME'     => $inputFilename,
-				'IN_BASENAME'     => $inputBasename,
+				'IN_FILENAME'     => rawurlencode($rawFilename),
+				'IN_BASENAME'     => rawurlencode($rawBasename),
 			];
 		}
 		$scriptText = strtr($scriptText, $subs);
