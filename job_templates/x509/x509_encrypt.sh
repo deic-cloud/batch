@@ -2,13 +2,14 @@
 
 ################################################
 #
-# Encrypt a small file with openssl using your
-# ScienceData X.509 public certificate.
-# !! NOTICE: The max size of the input file is 470 bytes. !!
-# You can change the user you encrypt the file to
-# by replacing SD_USER with the ScienceData username
-# of a  user who has generated a certificate in her
-# settings. E.g. some_user@dtu.dk.
+# Encrypt a file with openssl to your ScienceData
+# X.509 certificate (CMS/S-MIME envelope: AES-256
+# for the data, your RSA key for the AES key).
+# Files of any size can be encrypted.
+# Your certificate is written into the job when you
+# submit it, so any worker can run this job; only
+# your private key can decrypt the result (see the
+# x509_decrypt template).
 #
 ################################################
 #
@@ -22,13 +23,10 @@
 #
 ################################################
 
-
-# Fetch public certificate
-curl --insecure HOME_SERVER_PRIVATE_URL/index.php/apps/files_sharding/x509/cert > usercert.pem
-
-# Extract the publick key
-openssl x509 -pubkey -in usercert.pem -nocert > pubkey.pem
+# Your public certificate
+cat > usercert.pem <<'CERT'
+MY_SSL_CERT
+CERT
 
 # Encrypt
-openssl pkeyutl -encrypt -pubin -inkey pubkey.pem -in "IN_FILENAME_RAW" -out "IN_FILENAME.enc"
-
+openssl cms -encrypt -binary -aes256 -outform DER -in "IN_FILENAME_RAW" -out "IN_FILENAME.enc" usercert.pem

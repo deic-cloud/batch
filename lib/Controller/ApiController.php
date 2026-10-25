@@ -150,13 +150,14 @@ class ApiController extends Controller {
 		}
 		$workFolder = $this->setup->workFolder($uid);
 		$homeUrl    = $this->setup->homeServerUrl($uid);
+		$privateUrl = $this->setup->homeServerPrivateUrl($uid);
 		try {
 			$ids = [];
 			if ($inputs === []) {
-				$ids[] = $this->batch->submitJob($uid, $script_text, null, $workFolder, $homeUrl);
+				$ids[] = $this->batch->submitJob($uid, $script_text, null, $workFolder, $homeUrl, $privateUrl);
 			} else {
 				foreach ($inputs as $file) {
-					$ids[] = $this->batch->submitJob($uid, $script_text, (string)$file, $workFolder, $homeUrl);
+					$ids[] = $this->batch->submitJob($uid, $script_text, (string)$file, $workFolder, $homeUrl, $privateUrl);
 				}
 			}
 			return $this->ok(['jobs' => $ids]);

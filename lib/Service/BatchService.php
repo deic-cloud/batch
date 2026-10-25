@@ -66,6 +66,14 @@ class BatchService {
 		return "/CN={$uid}/O={$this->org}";
 	}
 
+	private function certPemOrEmpty(string $uid): string {
+		try {
+			return trim($this->cert->certPem($uid));
+		} catch (\Throwable) {
+			return '';
+		}
+	}
+
 	/** RFC 4122 v4 UUID — used as the job id (the GridFactory spool dir name). */
 	private function uuid(): string {
 		$b = random_bytes(16);
@@ -152,7 +160,7 @@ class BatchService {
 	 * is an optional path in the user's home folder to wire into the
 	 * #GRIDFACTORY placeholders. Returns the created job id (URL) or throws.
 	 */
-	public function submitJob(string $uid, string $scriptText, ?string $inputFile, string $workFolder, string $homeServerUrl): string {
+	public function submitJob(string $uid, string $scriptText, ?string $inputFile, string $workFolder, string $homeServerUrl, string $homeServerPrivateUrl = ''): string {
 		if (trim($scriptText) === '') {
 			throw new BatchServiceException('Empty job script.');
 		}
@@ -192,8 +200,11 @@ class BatchService {
 		$workFolderUrl = $davBase !== '' ? $davBase . ltrim($workFolder, '/') : '';
 		$subs = [
 			'WORK_FOLDER_URL'        => $workFolderUrl,
-			'HOME_SERVER_PRIVATE_URL' => $homeServerUrl,
+			'HOME_SERVER_PRIVATE_URL' => $homeServerPrivateUrl !== '' ? $homeServerPrivateUrl : $homeServerUrl,
 			'MY_SSL_DN'              => $this->dn($uid),
+			// The user's own certificate (public), for jobs that encrypt to the
+			// user without fetching anything from the worker.
+			'MY_SSL_CERT'            => $this->certPemOrEmpty($uid),
 			'SD_USER'                => $uid,
 		];
 		if ($inputFile !== null && $inputFile !== '') {

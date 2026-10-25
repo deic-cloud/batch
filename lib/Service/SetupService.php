@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace OCA\Batch\Service;
 
+use OCP\App\IAppManager;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
 use OCP\IConfig;
+use OCP\Server;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -19,12 +21,14 @@ class SetupService {
 	private const WORK_FOLDER_KEY = 'batch_folder';
 	private const DEFAULT_WORK_FOLDER = '/Batch';
 	private const SCRIPT_EXTS = ['sh', 'py'];
+	private const SHARDING_SERVICE = '\\OCA\\FilesSharding\\Service\\ShardingService';
 
 	public function __construct(
 		private IConfig $config,
 		private CertBridge $cert,
 		private IRootFolder $rootFolder,
 		private LoggerInterface $logger,
+		private IAppManager $appManager,
 	) {
 	}
 
@@ -54,6 +58,40 @@ class SetupService {
 	 */
 	public function homeServerUrl(string $uid): string {
 		return rtrim($this->config->getSystemValueString('overwrite.cli.url', ''), '/');
+	}
+
+	/**
+	 * The user's home server as seen from the pod network (e.g. https://10.2.0.20),
+	 * for HOME_SERVER_PRIVATE_URL: a job on the user's own worker pod fetches the
+	 * user's key or certificate there, and the home server maps a request to the
+	 * pod's owner only when it arrives from the pod network (files_sharding
+	 * IpAuthBackend, 'uservlannet'). Over the public URL the request leaves through
+	 * NAT and is refused. Derived as the OC7 app did: the home server's internal
+	 * URL (files_sharding registry) with its network prefix replaced by the pod
+	 * network's, e.g. 10.0.0.20 -> 10.2.0.20. Falls back to the public URL.
+	 */
+	public function homeServerPrivateUrl(string $uid): string {
+		$public = $this->homeServerUrl($uid);
+		$vlan = explode(' ', trim($this->config->getSystemValueString('uservlannet', '')))[0];
+		$prefix = rtrim($vlan, '.');
+		if ($prefix === '' || !$this->appManager->isEnabledForAnyone('files_sharding')
+				|| !class_exists(self::SHARDING_SERVICE)) {
+			return $public;
+		}
+		try {
+			$server = Server::get(self::SHARDING_SERVICE)->getUserServer($uid);
+			$internal = $server !== null ? trim((string)$server->getInternalUrl()) : '';
+		} catch (\Throwable $e) {
+			return $public;
+		}
+		$p = $internal !== '' ? parse_url($internal) : false;
+		$host = is_array($p) ? ($p['host'] ?? '') : '';
+		if (!filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+			return $public;
+		}
+		$keep = array_slice(explode('.', $host), substr_count($prefix, '.') + 1);
+		return ($p['scheme'] ?? 'https') . '://' . $prefix . '.' . implode('.', $keep)
+			. (isset($p['port']) ? ':' . $p['port'] : '');
 	}
 
 	/** @return array{dn:string,expires:string}|false */

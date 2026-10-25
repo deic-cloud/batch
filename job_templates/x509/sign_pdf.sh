@@ -35,8 +35,8 @@ curl --insecure HOME_SERVER_PRIVATE_URL/index.php/apps/files_sharding/x509/key >
 curl --insecure HOME_SERVER_PRIVATE_URL/index.php/apps/files_sharding/x509/cert > usercert.pem
 
 # Fetch ScienceData signature image
-curl -O https://sciencedata.dk/themes/deic_theme_oc7/core/img/sciencedata_signature.png
+curl -s -L -o sciencedata_signature.png https://lab.sciencedata.dk/public/rtes/sciencedata_signature.png
 
 # Sign
-java -jar $OPENPDFSIGN_JAR --page -1 --image sciencedata_signature.png --hint "Check the validity of this signature at sciencedata.dk" --input IN_FILENAME_RAW --output IN_BASENAME.signed.pdf --certificate usercert.pem --key userkey_unenc.pem
+java -jar $OPENPDFSIGN_JAR --page -1 --image sciencedata_signature.png --hint "Check the validity of this signature at sciencedata.dk" --input 'IN_FILENAME_RAW' --output 'IN_BASENAME.signed.pdf' --certificate usercert.pem --key userkey_unenc.pem
 
