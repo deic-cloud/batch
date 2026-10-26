@@ -41,7 +41,10 @@ class SetupService {
 			'certDn'        => $info['dn'] ?? '',
 			'certExpires'   => $info['expires'] ?? '',
 			'workFolder'    => $this->workFolder($uid),
-			'configured'    => $info !== null && $this->config->getUserValue($uid, 'batch', self::WORK_FOLDER_KEY, '') !== '',
+			// Ready once there is a certificate: the work folder has a default and
+			// is created on submit, so not having saved settings is no reason to
+			// put the setup panel in front of the user again on every visit.
+			'configured'    => $info !== null,
 		];
 	}
 

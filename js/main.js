@@ -404,6 +404,14 @@
 				more.className = 'button batch-icon'; more.textContent = '⋯'; more.title = 'Inspect'
 				more.addEventListener('click', () => openInspect(job))
 				tdAct.appendChild(more)
+				// Output: open the folder the job delivered its files to (enabled once done).
+				const out = document.createElement('button')
+				out.className = 'button batch-icon icon-folder'
+				const done = (job.csStatus || '').startsWith('done')
+				out.disabled = !done
+				out.title = done ? 'Open output folder' : 'Output folder — available when the job is done'
+				out.addEventListener('click', () => { if (done) { openOutputFolder(job) } })
+				tdAct.appendChild(out)
 				// Kill: stop a running job but KEEP its files so stdout/stderr stay
 				// inspectable (delete removes the whole job). Always shown next to
 				// the trash; the server no-ops a job that's already finished.
@@ -427,6 +435,36 @@
 		})
 		$('#batch-select-all').checked = false
 		updateDeleteBtn()
+	}
+
+	// Folders in the user's files that a job delivers output to: the destinations
+	// in its outFileMapping ("<local> <url> <local> <url> …") that lie under a
+	// home server's /grid/ (its WebDAV tree), as links to Files.
+	function outputFolderLinks(info) {
+		const parts = String(info.outFileMapping || '').trim().split(/\s+/)
+		const links = []
+		for (let i = 1; i < parts.length; i += 2) {
+			let u
+			try { u = new URL(parts[i]) } catch (e) { continue }
+			const m = u.pathname.match(/^\/grid(\/.*)$/)
+			if (!m) { continue }
+			let path
+			try { path = decodeURIComponent(m[1]) } catch (e) { path = m[1] }
+			const dir = path.replace(/\/[^/]*$/, '') || '/'
+			const link = (u.host === window.location.host ? '' : u.origin)
+				+ OC.generateUrl('/apps/files/') + '?dir=' + encodeURIComponent(dir)
+			if (links.indexOf(link) === -1) { links.push(link) }
+		}
+		return links
+	}
+
+	function openOutputFolder(job) {
+		apiGet('api/job?identifier=' + encodeURIComponent(job.identifier)).then((r) => {
+			if (r.status !== 'success') { toast(r.data.message, true); return }
+			const links = outputFolderLinks(r.data || {})
+			if (!links.length) { toast(t('batch', 'This job delivers no files to your folders.'), true); return }
+			window.open(links[0], '_blank', 'noopener')
+		})
 	}
 
 	function selectedIds() {
