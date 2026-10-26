@@ -1,0 +1,21 @@
+{
+  "name": "batch",
+  "version": "0.1.19",
+  "private": true,
+  "description": "Files 'Process' action of the batch app (the only bundled part)",
+  "scripts": {
+    "build": "webpack --node-env production",
+    "dev": "webpack --node-env development"
+  },
+  "dependencies": {
+    "@nextcloud/files": "^4.0.0",
+    "@nextcloud/l10n": "^3.4.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@babel/preset-env": "^7.24.0",
+    "babel-loader": "^9.1.3",
+    "webpack": "^5.106.0",
+    "webpack-cli": "^6.0.1"
+  }
+}
