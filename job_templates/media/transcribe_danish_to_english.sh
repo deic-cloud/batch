@@ -1,4 +1,9 @@
 #!/bin/bash
+# Title: Danish speech to English subtitles
+# Category: Media
+# Summary: English subtitles for a Danish recording: transcribed and translated with OpenAI Whisper.
+# Output: a .srt subtitle file next to each recording
+# Featured: 3
 
 ################################################
 #

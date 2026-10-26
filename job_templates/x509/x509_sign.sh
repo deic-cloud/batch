@@ -1,4 +1,8 @@
 #!/bin/bash
+# Title: Sign a file (detached signature)
+# Category: Signing & encryption
+# Summary: Makes a signature file with your private key. Runs only on a worker you start yourself.
+# Output: <name>.sig next to each file
 
 ################################################
 #

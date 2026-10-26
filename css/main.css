@@ -279,3 +279,12 @@
 
 /* Optimistic just-submitted job rows: subtle until the daemon registers them. */
 .batch-pending { opacity: .6; font-style: italic; }
+
+/* template choice in the editor and the picker dialog */
+.batch-template-name { font-weight: bold; margin-left: 8px; }
+.batch-template-info { color: var(--color-text-maxcontrast); margin: 0 0 8px; }
+.batch-template-output { margin-top: 2px; }
+.batch-picker-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
+#app-content-batch .batch-picker-actions button { width: auto; }
+#batch-picker-body { padding: 12px 16px 0; overflow: hidden; }
+#batch-picker .batch-picker-actions { padding: 0 16px 14px; }

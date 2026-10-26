@@ -1,6 +1,7 @@
 <?php
 /** @var \OCP\IL10N $l */
 /** @var array $_ */
+\OCP\Util::addScript('batch', 'picker');
 \OCP\Util::addScript('batch', 'main');
 \OCP\Util::addStyle('batch', 'main');
 ?>
@@ -53,9 +54,11 @@
 
 			<div id="batch-editor" class="batch-panel" hidden>
 				<div class="batch-editor-row">
-					<label for="batch-script-select"><?php p($l->t('Template / script')); ?>:</label>
-					<select id="batch-script-select"><option value=""><?php p($l->t('— choose —')); ?></option></select>
+					<label for="batch-choose-template"><?php p($l->t('Template / script')); ?>:</label>
+					<button id="batch-choose-template" class="button"><?php p($l->t('Choose…')); ?></button>
+					<span id="batch-template-name" class="batch-template-name"></span>
 				</div>
+				<div id="batch-template-info" class="batch-template-info" hidden></div>
 				<div class="batch-editor-row">
 					<label for="batch-input-file" title="<?php p($l->t('Each input file is submitted as a separate job.')); ?>"><?php p($l->t('Input files')); ?>:</label>
 					<input type="text" id="batch-input-file" placeholder="<?php p($l->t('path in your files, e.g. /data/in.txt')); ?>" />
@@ -85,6 +88,20 @@
 				<tbody id="batch-jobs-body"></tbody>
 			</table>
 			<div id="batch-jobs-empty" class="batch-note" hidden><?php p($l->t('No jobs yet.')); ?></div>
+		</div>
+
+		<!-- Template picker -->
+		<div id="batch-picker" class="batch-modal" hidden>
+			<div class="batch-modal-box">
+				<div class="batch-modal-head">
+					<span><?php p($l->t('Choose a job template')); ?></span>
+					<button id="batch-picker-close" class="batch-modal-close" aria-label="Close">✕</button>
+				</div>
+				<div id="batch-picker-body"></div>
+				<div class="batch-picker-actions">
+					<button id="batch-picker-use" class="primary" disabled><?php p($l->t('Use this template')); ?></button>
+				</div>
+			</div>
 		</div>
 
 		<!-- Inspect overlay -->

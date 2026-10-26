@@ -1,4 +1,8 @@
 #!/bin/bash
+# Title: Sign a PDF with your certificate
+# Category: Signing & encryption
+# Summary: Adds a visible signature made with your personal certificate. Runs only on a worker you start yourself.
+# Output: <name>.signed.pdf next to each PDF
 
 ################################################
 #

@@ -120,7 +120,8 @@ class SetupService {
 
 	/**
 	 * Copy the bundled job templates into <workFolder>/job_templates in the
-	 * user's files (idempotent — skips files that already exist).
+	 * user's files, overwriting existing copies so they are refreshed to the
+	 * current bundled versions (as the setup panel says).
 	 */
 	public function getTemplates(string $uid): void {
 		$src = dirname(__DIR__, 2) . '/job_templates';
@@ -150,6 +151,77 @@ class SetupService {
 		$this->collectScripts($base, ltrim($this->workFolder($uid), '/'), $scripts);
 		sort($scripts);
 		return $scripts;
+	}
+
+	/** Header keys read from a script's comments ("# Title: ..."). */
+	private const META_KEYS = ['title', 'category', 'summary', 'output', 'featured'];
+	private const MY_SCRIPTS = 'My scripts';
+
+	/**
+	 * The user's job templates and scripts as a catalog for the picker: one entry
+	 * per script with title, category, summary, output and featured rank, read
+	 * from "# Key: value" comment lines at the top of the script. A template copy
+	 * without them (copied before the bundled templates had them) gets them from
+	 * the bundled template at the same path. Fallbacks: the title from the file
+	 * name, the category from the template's folder ("Other" if none); scripts
+	 * outside job_templates are "My scripts".
+	 *
+	 * Sorted like the pod catalog: categories alphabetically, "Other" and
+	 * "My scripts" last; featured entries are picked out by the UI.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	public function catalog(string $uid): array {
+		$userFolder = $this->rootFolder->getUserFolder($uid);
+		$bundled = dirname(__DIR__, 2) . '/job_templates';
+		$out = [];
+		foreach ($this->listScripts($uid) as $path) {
+			$isTemplate = (bool)preg_match('#/job_templates/(.+)$#', $path, $m);
+			$meta = [];
+			try {
+				$node = $userFolder->get($path);
+				if ($node instanceof \OCP\Files\File) {
+					$meta = self::parseMeta(substr($node->getContent(), 0, 8192));
+				}
+			} catch (\Throwable $e) {
+			}
+			if ($isTemplate && $meta === [] && is_file($bundled . '/' . $m[1])) {
+				$meta = self::parseMeta((string)file_get_contents($bundled . '/' . $m[1], false, null, 0, 8192));
+			}
+			$folder = $isTemplate && str_contains($m[1], '/') ? explode('/', $m[1])[0] : '';
+			$featured = $meta['featured'] ?? '';
+			$out[] = [
+				'path' => $path,
+				'title' => ($meta['title'] ?? '') !== '' ? $meta['title'] : self::titleFromFile($path),
+				'category' => !$isTemplate ? self::MY_SCRIPTS
+					: (($meta['category'] ?? '') !== '' ? $meta['category'] : ($folder !== '' ? ucfirst($folder) : 'Other')),
+				'summary' => $meta['summary'] ?? '',
+				'output' => $meta['output'] ?? '',
+				'featured' => is_numeric($featured) && (int)$featured > 0 ? (int)$featured : null,
+			];
+		}
+		$last = static fn (string $c): int => $c === self::MY_SCRIPTS ? 2 : ($c === 'Other' ? 1 : 0);
+		usort($out, static fn ($x, $y) => [$last($x['category']), $x['category'], $x['title']]
+			<=> [$last($y['category']), $y['category'], $y['title']]);
+		return $out;
+	}
+
+	/** "# Key: value" lines from the top comment block of a script. @return array<string, string> */
+	private static function parseMeta(string $text): array {
+		$meta = [];
+		foreach (preg_split('/\R/', $text) ?: [] as $line) {
+			if (preg_match('/^#\s*([A-Za-z]+)\s*:\s*(.+?)\s*$/', $line, $m)) {
+				$key = strtolower($m[1]);
+				if (in_array($key, self::META_KEYS, true) && !isset($meta[$key])) {
+					$meta[$key] = $m[2];
+				}
+			}
+		}
+		return $meta;
+	}
+
+	private static function titleFromFile(string $path): string {
+		return ucfirst(str_replace(['_', '-'], ' ', preg_replace('/\.[^.]+$/', '', basename($path)) ?? ''));
 	}
 
 	/** $relPath is relative to the user's files root (e.g. Batch/job_templates/util/xz.sh). */

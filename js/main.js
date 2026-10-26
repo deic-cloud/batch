@@ -164,19 +164,62 @@
 
 	// --------------------------------------------------------------- editor
 
+	// Job templates and saved scripts (api/catalog), chosen with BatchPicker.
+	let catalog = []
+	let selectedPath = ''
+	let pickerChoice = null
+
 	function loadScripts(selectPath) {
-		return apiGet('api/scripts').then((r) => {
-			const scripts = (r.status === 'success' && Array.isArray(r.data)) ? r.data : []
-			const sel = $('#batch-script-select')
-			sel.innerHTML = '<option value="">— choose —</option>'
-			scripts.forEach((p) => {
-				const o = document.createElement('option')
-				o.value = p
-				o.textContent = p.replace(/^.*?\/job_templates\//, '').replace(/\/job_templates\//, '/')
-				sel.appendChild(o)
-			})
-			if (selectPath) { sel.value = selectPath }
+		return apiGet('api/catalog').then((r) => {
+			catalog = (r.status === 'success' && Array.isArray(r.data)) ? r.data : []
+			if (selectPath !== undefined) { showChosen(catalog.find((e) => e.path === selectPath) || null) }
 		})
+	}
+
+	// Show the chosen template's name, summary and where its output goes.
+	function showChosen(entry) {
+		selectedPath = entry ? entry.path : ''
+		$('#batch-template-name').textContent = entry ? entry.title : ''
+		const info = $('#batch-template-info')
+		info.textContent = ''
+		if (entry && (entry.summary || entry.output)) {
+			if (entry.summary) { info.appendChild(document.createTextNode(entry.summary)) }
+			if (entry.output) {
+				const o = document.createElement('div')
+				o.className = 'batch-template-output'
+				o.textContent = t('batch', 'Output') + ': ' + entry.output
+				info.appendChild(o)
+			}
+		}
+		info.hidden = !info.childNodes.length
+	}
+
+	function useTemplate(entry) {
+		$('#batch-picker').hidden = true
+		apiGet('api/script?path=' + encodeURIComponent(entry.path)).then((r) => {
+			if (r.status === 'success') {
+				$('#batch-script-text').value = r.data || ''
+				showChosen(entry)
+			} else { toast(r.data.message, true) }
+		})
+	}
+
+	function openPicker() {
+		const show = () => {
+			pickerChoice = null
+			$('#batch-picker-use').disabled = true
+			if (!catalog.length) {
+				$('#batch-picker-body').textContent = t('batch', 'You have no job templates yet. Copy the default ones in Setup.')
+			} else {
+				window.BatchPicker.render($('#batch-picker-body'), catalog, {
+					selected: selectedPath,
+					onSelect: (e) => { pickerChoice = e; $('#batch-picker-use').disabled = false },
+					onChoose: useTemplate,
+				}).focus()
+			}
+			$('#batch-picker').hidden = false
+		}
+		loadScripts().then(show)
 	}
 
 	// Kill icon — MDI stop-circle-outline (a stop square framed in a circle, so it
@@ -225,7 +268,7 @@
 	function openEditor() {
 		$('#batch-editor').hidden = false
 		$('#batch-script-text').value = STARTER_SCRIPT
-		$('#batch-script-select').value = ''
+		showChosen(null)
 		$('#batch-input-file').value = ''
 		inputFiles = []
 		renderInputChips()
@@ -235,13 +278,10 @@
 	function wireEditor() {
 		$('#batch-new').addEventListener('click', openEditor)
 		$('#batch-cancel').addEventListener('click', () => { $('#batch-editor').hidden = true })
-		$('#batch-script-select').addEventListener('change', (e) => {
-			const path = e.target.value
-			if (!path) { return }
-			apiGet('api/script?path=' + encodeURIComponent(path)).then((r) => {
-				if (r.status === 'success') { $('#batch-script-text').value = r.data || '' } else { toast(r.data.message, true) }
-			})
-		})
+		$('#batch-choose-template').addEventListener('click', openPicker)
+		$('#batch-picker-use').addEventListener('click', () => { if (pickerChoice) { useTemplate(pickerChoice) } })
+		$('#batch-picker-close').addEventListener('click', () => { $('#batch-picker').hidden = true })
+		$('#batch-picker').addEventListener('click', (e) => { if (e.target.id === 'batch-picker') { $('#batch-picker').hidden = true } })
 		$('#batch-add-input').addEventListener('click', () => addInput($('#batch-input-file').value))
 		$('#batch-input-file').addEventListener('keydown', (e) => {
 			if (e.key === 'Enter') { e.preventDefault(); addInput($('#batch-input-file').value) }
@@ -261,7 +301,7 @@
 			// Saving is OPTIONAL — Submit uses the editor text directly. Save only
 			// persists a reusable script: overwrite the selected one, or, with
 			// nothing selected, save a new file into your work folder.
-			let path = $('#batch-script-select').value
+			let path = selectedPath
 			if (!path) {
 				const name = window.prompt('Save this script as (filename in ' + workFolder + '/):', 'my_job.sh')
 				if (!name) { return }

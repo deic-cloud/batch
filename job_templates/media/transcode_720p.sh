@@ -1,4 +1,9 @@
 #!/bin/bash
+# Title: Convert video to 720p
+# Category: Media
+# Summary: Re-encode an mp4 video to 720p (H.264), e.g. for streaming or sharing.
+# Output: <name>_720p.mp4 in Batch/output_files
+# Featured: 4
 
 ################################################
 #

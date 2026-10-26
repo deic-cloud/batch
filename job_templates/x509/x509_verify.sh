@@ -1,4 +1,8 @@
 #!/bin/bash
+# Title: Verify a file's signature
+# Category: Signing & encryption
+# Summary: Checks a file against its .sig and the signer's usercert.pem in the same folder.
+# Output: the result in the job's output (stdout)
 
 ################################################
 #

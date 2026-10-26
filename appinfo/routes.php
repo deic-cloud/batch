@@ -14,6 +14,7 @@ return [
 
 		// Job scripts in the user's work folder.
 		['name' => 'api#listScripts', 'url' => '/api/scripts',      'verb' => 'GET'],
+		['name' => 'api#catalog',     'url' => '/api/catalog',      'verb' => 'GET'],
 		['name' => 'api#loadScript',  'url' => '/api/script',       'verb' => 'GET'],
 		['name' => 'api#saveScript',  'url' => '/api/script',       'verb' => 'POST'],
 

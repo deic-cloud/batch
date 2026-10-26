@@ -21,10 +21,9 @@ const STYLE = `
   justify-content: center; background: rgba(0, 0, 0, .35); }
 .batch-process-box { background: var(--color-main-background); color: var(--color-main-text);
   border-radius: var(--border-radius-large, 10px); box-shadow: 0 0 40px rgba(0, 0, 0, .3);
-  padding: 20px 24px; width: min(480px, calc(100vw - 32px)); }
+  padding: 20px 24px; width: min(760px, calc(100vw - 32px)); }
 .batch-process-box h3 { margin: 0 0 12px; font-weight: bold; }
 .batch-process-body label { display: block; margin-bottom: 4px; }
-.batch-process-body select { width: 100%; }
 .batch-process-note { color: var(--color-text-maxcontrast); margin-top: 8px; }
 .batch-process-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 .batch-process-buttons button { width: auto; }
@@ -115,33 +114,39 @@ function openDialog(files) {
 			if (withLink) { body.append(' ', openBatch) }
 		}
 
-		Promise.all([apiGet('api/setup'), apiGet('api/scripts')]).then(([setup, scripts]) => {
+		Promise.all([apiGet('api/setup'), apiGet('api/catalog')]).then(([setup, catalog]) => {
 			if (setup.status !== 'success' || !setup.data || !setup.data.configured) {
 				say(t(APP, 'Batch is not set up for you yet.'), true)
 				return
 			}
-			const list = (scripts.status === 'success' && Array.isArray(scripts.data)) ? scripts.data : []
+			const list = (catalog.status === 'success' && Array.isArray(catalog.data)) ? catalog.data : []
 			if (!list.length) {
 				say(t(APP, 'You have no job templates yet. Copy the default ones in Batch → Setup.'), true)
 				return
 			}
-			const select = el('select', { id: 'batch-process-template', 'aria-label': t(APP, 'Job template') })
-			list.forEach((p) => select.appendChild(el('option', { value: p, text: label(p) })))
+			if (!window.BatchPicker) {
+				say(t(APP, 'Could not load the template picker.'), true)
+				return
+			}
+			let chosen = null
+			const pick = el('div')
+			const note = el('p', { class: 'batch-process-note', text: n(APP, 'Choose a template - one job will be submitted.', 'Choose a template - one job per file, %n jobs will be submitted.', files.length) })
 			body.textContent = ''
-			body.append(
-				el('label', { for: 'batch-process-template', text: t(APP, 'Job template') }),
-				select,
-				el('p', { class: 'batch-process-note', text: n(APP, 'One job will be submitted.', 'One job per file - %n jobs will be submitted.', files.length) }),
-			)
-			submit.disabled = false
-			select.focus()
+			body.append(pick, note)
+			const select = (e) => {
+				chosen = e
+				submit.disabled = false
+				note.textContent = (e.output ? t(APP, 'Output') + ': ' + e.output + '. ' : '')
+					+ n(APP, 'One job will be submitted.', 'One job per file - %n jobs will be submitted.', files.length)
+			}
+			window.BatchPicker.render(pick, list, { onSelect: select, onChoose: (e) => { select(e); submit.click() } }).focus()
 
 			submit.addEventListener('click', async () => {
 				submit.disabled = true
 				cancel.disabled = true
 				say(t(APP, 'Submitting…'))
 				const r = await apiPost('api/job', {
-					script_path: select.value,
+					script_path: chosen.path,
 					input_files: JSON.stringify(files.map(filePath)),
 				})
 				close()

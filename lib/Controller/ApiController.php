@@ -89,6 +89,11 @@ class ApiController extends Controller {
 	}
 
 	#[NoAdminRequired]
+	public function catalog(): JSONResponse {
+		return $this->ok($this->setup->catalog($this->uid()));
+	}
+
+	#[NoAdminRequired]
 	public function loadScript(string $path = ''): JSONResponse {
 		if ($path === '') {
 			return $this->fail('No script specified.');

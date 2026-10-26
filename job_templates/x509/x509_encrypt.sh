@@ -1,4 +1,8 @@
 #!/bin/bash
+# Title: Encrypt a file to your certificate
+# Category: Signing & encryption
+# Summary: Encrypts a file so only your private key can decrypt it (any size).
+# Output: <name>.enc in Batch/output_files
 
 ################################################
 #

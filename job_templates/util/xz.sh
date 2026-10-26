@@ -1,4 +1,8 @@
 #!/bin/bash
+# Title: Compress a file (xz)
+# Category: Utilities
+# Summary: Compress a file with xz.
+# Output: <name>.xz in Batch/output_files
 
 ################################################
 #

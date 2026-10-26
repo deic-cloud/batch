@@ -1,4 +1,9 @@
 #!/bin/bash
+# Title: Count words (test job)
+# Category: Utilities
+# Summary: Counts lines, words and characters of a text file - a quick check that batch jobs work.
+# Output: <name>.wc.txt in Batch/output_files
+# Featured: 5
 #
 # Simple test job: run "wc" on an input text file and write the counts to
 # <name>.wc.txt in your work folder's output_files. Pick an input file,

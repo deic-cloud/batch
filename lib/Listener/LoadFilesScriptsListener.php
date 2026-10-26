@@ -16,6 +16,9 @@ class LoadFilesScriptsListener implements IEventListener {
 			return;
 		}
 		// Loaded after the Files app so its action registry exists.
+		// picker.js: the template gallery the Process dialog shows (plain JS, shared
+		// with the Batch page).
+		Util::addScript('batch', 'picker', 'files');
 		Util::addScript('batch', 'files-action', 'files');
 	}
 }
