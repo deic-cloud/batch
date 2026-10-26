@@ -520,7 +520,11 @@
 		$('#batch-inspect-body').textContent = 'Loading…'
 		apiGet('api/job?identifier=' + encodeURIComponent(inspectJob.identifier)).then((r) => {
 			if (r.status !== 'success') { $('#batch-inspect-body').textContent = r.data.message; return }
+			// outTmp, errTmp, jobID and host describe the job inside the worker and
+			// stay in the worker's own record - the batch server never has them.
+			const workerOnly = ['outTmp', 'errTmp', 'jobID', 'jobId', 'host']
 			$('#batch-inspect-body').textContent = Object.keys(r.data)
+				.filter((k) => workerOnly.indexOf(k) === -1)
 				.map((k) => k + ': ' + r.data[k]).join('\n')
 		})
 	}
