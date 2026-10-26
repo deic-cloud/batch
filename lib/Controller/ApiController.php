@@ -149,6 +149,11 @@ class ApiController extends Controller {
 			}
 		}
 		$workFolder = $this->setup->workFolder($uid);
+		try {
+			$this->setup->ensureWorkFolder($uid);
+		} catch (\Throwable $e) {
+			return $this->fail('Could not create the work folder ' . $workFolder . '/output_files.');
+		}
 		$homeUrl    = $this->setup->homeServerUrl($uid);
 		$privateUrl = $this->setup->homeServerPrivateUrl($uid);
 		try {

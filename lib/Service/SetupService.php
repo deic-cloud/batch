@@ -99,6 +99,15 @@ class SetupService {
 		return $this->cert->generate($uid);
 	}
 
+	/**
+	 * Make sure the work folder and its output_files exist: jobs deliver their
+	 * results there, and the upload fails (409) if the folder is missing - as it
+	 * is for a user who never saved the batch settings.
+	 */
+	public function ensureWorkFolder(string $uid): void {
+		$this->ensureFolder($this->rootFolder->getUserFolder($uid), ltrim($this->workFolder($uid), '/') . '/output_files');
+	}
+
 	public function saveSettings(string $uid, string $workFolder): void {
 		$workFolder = '/' . trim($workFolder, '/');
 		$this->config->setUserValue($uid, 'batch', self::WORK_FOLDER_KEY, $workFolder);
