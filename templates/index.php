@@ -49,6 +49,7 @@
 				<input type="text" id="batch-filter" class="batch-filter" placeholder="<?php p($l->t('Filter jobs…')); ?>" />
 				<label class="batch-mine-label"><input type="checkbox" id="batch-mine-only" checked /> <?php p($l->t('My jobs only')); ?></label>
 				<span id="batch-loading" hidden><span class="icon-loading-small"></span> <?php p($l->t('Working…')); ?></span>
+				<a id="batch-folder-link" href="#" class="batch-link" target="_blank" rel="noopener"><?php p($l->t('Work folder')); ?></a>
 				<a id="batch-setup-link" href="#" class="batch-link"><?php p($l->t('Setup')); ?></a>
 			</div>
 

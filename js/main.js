@@ -78,6 +78,16 @@
 
 	let workFolder = 'Batch'
 
+	// The work folder (from api/setup), and the "Work folder" link to it in Files.
+	function setWorkFolder(path) {
+		workFolder = (path || 'Batch').replace(/^\/+|\/+$/g, '') || 'Batch'
+		const link = $('#batch-folder-link')
+		if (link) {
+			link.href = OC.generateUrl('/apps/files/') + '?dir=' + encodeURIComponent('/' + workFolder)
+			link.title = t('batch', 'Open {folder} in Files', { folder: '/' + workFolder })
+		}
+	}
+
 	function populateSetup(status) {
 		const nofs = !status.filesSharding
 		$('#batch-setup-nofs').hidden = !nofs
@@ -87,7 +97,7 @@
 			: 'none yet'
 		$('#batch-gen-cert').textContent = status.hasCert ? 'Regenerate' : 'Generate certificate'
 		$('#batch-workfolder').value = status.workFolder || '/Batch'
-		workFolder = (status.workFolder || 'Batch').replace(/^\/+|\/+$/g, '') || 'Batch'
+		setWorkFolder(status.workFolder)
 	}
 
 	// Setup is a modal overlaid on the main (jobs) view.
@@ -110,6 +120,7 @@
 	function refreshSetup() {
 		return apiGet('api/setup').then((r) => {
 			const s = r.data || {}
+			setWorkFolder(s.workFolder)
 			showMain()                          // main is always the base view…
 			if (!s.configured) { openSetup(s) } // …with the setup modal over it until configured
 			return s

@@ -288,3 +288,6 @@
 #app-content-batch .batch-picker-actions button { width: auto; }
 #batch-picker-body { padding: 12px 16px 0; overflow: hidden; }
 #batch-picker .batch-picker-actions { padding: 0 16px 14px; }
+
+/* "Work folder" takes the free space; "Setup" sits right after it */
+#batch-controls #batch-setup-link { margin-left: 16px; }
