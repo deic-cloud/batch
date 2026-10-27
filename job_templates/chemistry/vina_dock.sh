@@ -3,6 +3,7 @@
 # Category: Chemistry
 # Summary: Docks a ligand (SDF, MOL or PDBQT) into receptor.pdbqt within the box in vina_box.txt (both in the same folder), with AutoDock Vina.
 # Output: <name>.docked.pdbqt (poses) and <name>.vina.txt (scores) next to each ligand
+# Featured: 6
 # Accepts: .sdf, .mol, .pdbqt
 
 ################################################

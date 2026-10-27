@@ -39,6 +39,7 @@
 	}
 
 	const tr = (s) => (window.t ? window.t('batch', s) : s)
+	const MAX_FEATURED = 6
 
 	// Category -> icon (Material Design Icons in img/categories), chosen by a
 	// keyword in the category name like the pod image gallery does, so new
@@ -118,7 +119,11 @@
 			}
 			// Featured first (only when not searching), then every category in the
 			// server's order (alphabetical; "Other" and "My scripts" last).
+			// At most MAX_FEATURED (two rows), each title once - a second copy of the
+			// templates elsewhere in the work folder must not double the row.
+			const seen = new Set()
 			const featured = q ? [] : shown.filter((e) => e.featured).sort((a, b) => a.featured - b.featured)
+				.filter((e) => !seen.has(e.title) && seen.add(e.title)).slice(0, MAX_FEATURED)
 			if (featured.length) { scroll.appendChild(section(tr('Featured'), featured)) }
 			const cats = []
 			shown.forEach((e) => { if (!cats.includes(e.category)) { cats.push(e.category) } })

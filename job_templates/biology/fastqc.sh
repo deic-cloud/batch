@@ -3,8 +3,8 @@
 # Category: Biology
 # Summary: Quality-control report for a sequencing file (FASTQ, BAM or SAM): base qualities, GC content, duplication, adapter content.
 # Output: <name>.fastqc.html next to each file
+# Featured: 4
 # Accepts: .fastq, .fq, .fastq.gz, .fq.gz, .bam, .sam
-# Featured: 6
 
 ################################################
 #

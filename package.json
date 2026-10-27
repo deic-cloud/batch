@@ -1,6 +1,6 @@
 {
   "name": "batch",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "private": true,
   "description": "Files 'Process' action of the batch app (the only bundled part)",
   "scripts": {
