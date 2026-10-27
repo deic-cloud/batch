@@ -22,6 +22,9 @@
 .batch-picker .batch-picker-card:hover { border-color: var(--color-primary-element); }
 .batch-picker .batch-picker-card.selected { border: 2px solid var(--color-primary-element);
   background: var(--color-primary-element-light, var(--color-background-hover)); }
+.batch-picker-card-head { display: flex; align-items: center; gap: 10px; }
+.batch-picker-card-icon { flex: 0 0 28px; width: 28px; height: 28px; background-color: var(--color-primary-element);
+  -webkit-mask: var(--batch-icon) center / contain no-repeat; mask: var(--batch-icon) center / contain no-repeat; }
 .batch-picker-card-title { font-weight: bold; }
 .batch-picker-card-summary { color: var(--color-text-maxcontrast); font-size: 0.92em; }
 .batch-picker-empty { color: var(--color-text-maxcontrast); padding: 8px 0; }
@@ -36,6 +39,25 @@
 	}
 
 	const tr = (s) => (window.t ? window.t('batch', s) : s)
+
+	// Category -> icon (Material Design Icons in img/categories), chosen by a
+	// keyword in the category name like the pod image gallery does, so new
+	// categories get a fitting icon without code changes.
+	const ICONS = [
+		[['my scripts'], 'script-text-outline'],
+		[['media', 'video', 'audio', 'sound'], 'play-box-multiple-outline'],
+		[['biolog', 'genom', 'sequenc', 'dna'], 'dna'],
+		[['wind', 'climate', 'weather', 'energy'], 'wind-turbine'],
+		[['chem'], 'flask-outline'],
+		[['sign', 'encrypt', 'certific', 'secur'], 'certificate-outline'],
+		[['utilit', 'tool'], 'tools'],
+	]
+	function iconUrl(category) {
+		const c = (category || '').toLowerCase()
+		const hit = ICONS.find(([words]) => words.some((w) => c.includes(w)))
+		const name = hit ? hit[1] : 'cube-outline'
+		return window.OC && window.OC.imagePath ? window.OC.imagePath('batch', 'categories/' + name) : ''
+	}
 
 	function el(tag, cls, text) {
 		const e = document.createElement(tag)
@@ -62,7 +84,13 @@
 			b.type = 'button'
 			b.dataset.path = e.path
 			b.title = e.path
-			b.append(el('span', 'batch-picker-card-title', e.title), el('span', 'batch-picker-card-summary', e.summary || ''))
+			const head = el('span', 'batch-picker-card-head')
+			const icon = el('span', 'batch-picker-card-icon')
+			icon.setAttribute('aria-hidden', 'true')
+			const url = iconUrl(e.category)
+			if (url) { icon.style.setProperty('--batch-icon', 'url("' + url + '")') }
+			head.append(icon, el('span', 'batch-picker-card-title', e.title))
+			b.append(head, el('span', 'batch-picker-card-summary', e.summary || ''))
 			b.addEventListener('click', () => {
 				selected = e.path
 				container.querySelectorAll('.batch-picker-card').forEach((c) => c.classList.toggle('selected', c.dataset.path === selected))
