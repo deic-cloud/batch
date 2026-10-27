@@ -197,7 +197,9 @@ class SetupService {
 					: (($meta['category'] ?? '') !== '' ? $meta['category'] : ($folder !== '' ? ucfirst($folder) : 'Other')),
 				'summary' => $meta['summary'] ?? '',
 				'output' => $meta['output'] ?? '',
-				'featured' => is_numeric($featured) && (int)$featured > 0 ? (int)$featured : null,
+				// Only templates (under job_templates) can be featured - not the user's
+				// own scripts, e.g. a renamed copy of the templates elsewhere.
+				'featured' => $isTemplate && is_numeric($featured) && (int)$featured > 0 ? (int)$featured : null,
 				// File types the template is meant for ("audio/*", ".fastq.gz",
 				// "*layout*.csv"); Files offers it directly on matching files.
 				'accepts' => array_values(array_filter(array_map('trim', explode(',', $meta['accepts'] ?? '')))),
