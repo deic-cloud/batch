@@ -3,6 +3,7 @@
 # Category: Utilities
 # Summary: Decompress a file compressed with xz.
 # Output: the decompressed file in Batch/output_files
+# Accepts: .xz
 
 ################################################
 #

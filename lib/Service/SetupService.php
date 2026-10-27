@@ -154,7 +154,7 @@ class SetupService {
 	}
 
 	/** Header keys read from a script's comments ("# Title: ..."). */
-	private const META_KEYS = ['title', 'category', 'summary', 'output', 'featured'];
+	private const META_KEYS = ['title', 'category', 'summary', 'output', 'featured', 'accepts'];
 	private const MY_SCRIPTS = 'My scripts';
 
 	/**
@@ -198,6 +198,9 @@ class SetupService {
 				'summary' => $meta['summary'] ?? '',
 				'output' => $meta['output'] ?? '',
 				'featured' => is_numeric($featured) && (int)$featured > 0 ? (int)$featured : null,
+				// File types the template is meant for ("audio/*", ".fastq.gz",
+				// "*layout*.csv"); Files offers it directly on matching files.
+				'accepts' => array_values(array_filter(array_map('trim', explode(',', $meta['accepts'] ?? '')))),
 			];
 		}
 		$last = static fn (string $c): int => $c === self::MY_SCRIPTS ? 2 : ($c === 'Other' ? 1 : 0);

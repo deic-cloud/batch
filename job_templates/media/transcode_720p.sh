@@ -3,6 +3,7 @@
 # Category: Media
 # Summary: Re-encode an mp4 video to 720p (H.264), e.g. for streaming or sharing.
 # Output: <name>_720p.mp4 in Batch/output_files
+# Accepts: video/mp4, .mp4
 # Featured: 4
 
 ################################################

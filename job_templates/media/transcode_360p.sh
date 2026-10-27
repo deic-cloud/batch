@@ -3,6 +3,7 @@
 # Category: Media
 # Summary: Re-encode an mp4 video to 360p (H.264) - small files for slow connections.
 # Output: <name>_360p.mp4 in Batch/output_files
+# Accepts: video/mp4, .mp4
 
 ################################################
 #

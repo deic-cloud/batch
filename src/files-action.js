@@ -9,6 +9,7 @@
  */
 import { registerFileAction, FileType } from '@nextcloud/files'
 import { translate as t, translatePlural as n } from '@nextcloud/l10n'
+import { mdiPlayBoxMultipleOutline, mdiDna, mdiWindTurbine, mdiFlaskOutline, mdiCertificateOutline, mdiTools, mdiScriptTextOutline, mdiCubeOutline } from '@mdi/js'
 
 const APP = 'batch'
 const ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
@@ -88,7 +89,7 @@ function el(tag, attrs, children) {
 }
 
 /** The dialog: pick a template, submit one job per file. Resolves when closed. */
-function openDialog(files) {
+function openDialog(files, preselect) {
 	addStyle()
 	return new Promise((resolve) => {
 		const overlay = el('div', { class: 'batch-process-overlay' })
@@ -139,7 +140,9 @@ function openDialog(files) {
 				note.textContent = (e.output ? t(APP, 'Output') + ': ' + e.output + '. ' : '')
 					+ n(APP, 'One job will be submitted.', 'One job per file - %n jobs will be submitted.', files.length)
 			}
-			window.BatchPicker.render(pick, list, { onSelect: select, onChoose: (e) => { select(e); submit.click() } }).focus()
+			const pre = preselect ? list.find((e) => e.path === preselect.path) : null
+			window.BatchPicker.render(pick, list, { selected: pre ? pre.path : '', onSelect: select, onChoose: (e) => { select(e); submit.click() } }).focus()
+			if (pre) { select(pre) }
 
 			submit.addEventListener('click', async () => {
 				submit.disabled = true
@@ -161,13 +164,89 @@ function openDialog(files) {
 	})
 }
 
-async function processNodes(nodes) {
+async function processNodes(nodes, preselect) {
 	const files = (nodes || []).filter((node) => node.type === FileType.File)
 	if (!files.length) {
 		toast(t(APP, 'Select one or more files to process (folders are skipped).'), true)
 		return
 	}
-	await openDialog(files)
+	await openDialog(files, preselect)
+}
+
+// --- File-type aware entries: a template declaring "# Accepts: audio/*, .fastq.gz,
+// *layout*.csv" is offered directly in a "Process" submenu on matching files.
+
+const MAX_SUGGESTED = 5
+let suggestable = [] // catalog entries with accepts, featured first
+
+const escapeRe = (x) => x.replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+function accepts(entry, node) {
+	if (!node || node.type !== FileType.File) { return false }
+	const name = (node.basename || '').toLowerCase()
+	const mime = (node.mime || '').toLowerCase()
+	return entry.accepts.some((pattern) => {
+		const a = pattern.toLowerCase()
+		if (a.includes('/')) { return a.endsWith('/*') ? mime.startsWith(a.slice(0, -1)) : mime === a }
+		if (a.includes('*')) { return new RegExp('^' + a.split('*').map(escapeRe).join('.*') + '$').test(name) }
+		if (a.startsWith('.')) { return name.endsWith(a) }
+		return name === a
+	})
+}
+// Templates offered for these nodes: every node must match; at most MAX_SUGGESTED.
+function suggestions(nodes) {
+	if (!Array.isArray(nodes) || !nodes.length) { return [] }
+	return suggestable.filter((e) => nodes.every((node) => accepts(e, node))).slice(0, MAX_SUGGESTED)
+}
+
+// Same category -> icon keywords as the gallery (js/picker.js), as inline SVG.
+const CATEGORY_ICONS = [
+	[['my scripts'], mdiScriptTextOutline],
+	[['media', 'video', 'audio', 'sound'], mdiPlayBoxMultipleOutline],
+	[['biolog', 'genom', 'sequenc', 'dna'], mdiDna],
+	[['wind', 'climate', 'weather', 'energy'], mdiWindTurbine],
+	[['chem'], mdiFlaskOutline],
+	[['sign', 'encrypt', 'certific', 'secur'], mdiCertificateOutline],
+	[['utilit', 'tool'], mdiTools],
+]
+function categorySvg(category) {
+	const c = (category || '').toLowerCase()
+	const hit = CATEGORY_ICONS.find(([words]) => words.some((w) => c.includes(w)))
+	return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="' + (hit ? hit[1] : mdiCubeOutline) + '"/></svg>'
+}
+
+const notTrash = (view) => !(view && view.id === 'trashbin')
+
+async function registerSuggestions() {
+	if (!window.OC || !window.OC.currentUser) { return }
+	const r = await apiGet('api/catalog')
+	const list = (r.status === 'success' && Array.isArray(r.data)) ? r.data : []
+	suggestable = list.filter((e) => Array.isArray(e.accepts) && e.accepts.length)
+		.sort((a, b) => (a.featured || 999) - (b.featured || 999))
+	suggestable.forEach((entry, i) => {
+		registerFileAction({
+			id: 'batch-process-' + i,
+			parent: 'batch-process',
+			displayName: () => entry.title,
+			title: () => entry.summary || entry.title,
+			iconSvgInline: () => categorySvg(entry.category),
+			enabled: ({ nodes, view }) => notTrash(view) && suggestions(nodes).includes(entry),
+			exec: async ({ nodes }) => { await processNodes(nodes, entry); return null },
+			execBatch: async ({ nodes }) => { await processNodes(nodes, entry); return nodes.map(() => null) },
+			order: i,
+		})
+	})
+	if (suggestable.length) {
+		registerFileAction({
+			id: 'batch-process-other',
+			parent: 'batch-process',
+			displayName: () => t(APP, 'Other templates…'),
+			iconSvgInline: () => ICON,
+			enabled: ({ nodes, view }) => notTrash(view) && suggestions(nodes).length > 0,
+			exec: async ({ nodes }) => { await processNodes(nodes); return null },
+			execBatch: async ({ nodes }) => { await processNodes(nodes); return nodes.map(() => null) },
+			order: 100,
+		})
+	}
 }
 
 registerFileAction({
@@ -182,3 +261,5 @@ registerFileAction({
 	execBatch: async ({ nodes }) => { await processNodes(nodes); return nodes.map(() => null) },
 	order: 60,
 })
+
+registerSuggestions()

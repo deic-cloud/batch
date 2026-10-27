@@ -3,6 +3,7 @@
 # Category: Signing & encryption
 # Summary: Lists the signatures in a PDF and whether they are valid.
 # Output: the result in the job's output (stdout)
+# Accepts: application/pdf, .pdf
 
 ################################################
 #

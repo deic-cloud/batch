@@ -3,6 +3,7 @@
 # Category: Wind & climate
 # Summary: Annual energy production and wake losses of a wind farm layout (CSV of turbine positions x,y in metres) with DTU Wind's PyWake, on the Horns Rev 1 site with Vestas V80 turbines.
 # Output: <name>.aep.txt and <name>.wakemap.png next to each layout
+# Accepts: *layout*.csv
 # Featured: 7
 
 ################################################

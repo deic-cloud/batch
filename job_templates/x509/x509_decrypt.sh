@@ -3,6 +3,7 @@
 # Category: Signing & encryption
 # Summary: Decrypts a file made with "Encrypt a file to your certificate". Runs only on a worker you start yourself.
 # Output: the decrypted file in Batch/output_files
+# Accepts: .enc
 
 ################################################
 #

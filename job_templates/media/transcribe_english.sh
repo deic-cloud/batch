@@ -3,6 +3,7 @@
 # Category: Media
 # Summary: Subtitles for an English recording (audio or video), made with OpenAI Whisper.
 # Output: a .srt subtitle file next to each recording
+# Accepts: audio/*, video/*
 # Featured: 2
 
 ################################################
