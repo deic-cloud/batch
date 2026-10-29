@@ -1,7 +1,7 @@
 #!/bin/bash
 # Title: Wind farm energy production (PyWake)
 # Category: Wind & climate
-# Summary: Annual energy production and wake losses of a wind farm layout (CSV of turbine positions x,y in metres) with DTU Wind's PyWake, on the Horns Rev 1 site with Vestas V80 turbines.
+# Summary: Annual energy production and wake losses of a wind farm layout (CSV of turbine positions), with DTU Wind's PyWake.
 # Output: <name>.aep.txt and <name>.wakemap.png next to each layout
 # Featured: 5
 # Accepts: *layout*.csv

@@ -26,7 +26,8 @@
 .batch-picker-card-icon { flex: 0 0 28px; width: 28px; height: 28px; background-color: var(--color-primary-element);
   -webkit-mask: var(--batch-icon) center / contain no-repeat; mask: var(--batch-icon) center / contain no-repeat; }
 .batch-picker-card-title { font-weight: bold; }
-.batch-picker-card-summary { color: var(--color-text-maxcontrast); font-size: 0.92em; }
+.batch-picker-card-summary { color: var(--color-text-maxcontrast); font-size: 0.92em;
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .batch-picker-empty { color: var(--color-text-maxcontrast); padding: 8px 0; }
 `
 	function addStyle() {
@@ -84,7 +85,8 @@
 			const b = el('button', 'batch-picker-card' + (e.path === selected ? ' selected' : ''))
 			b.type = 'button'
 			b.dataset.path = e.path
-			b.title = e.path
+			// Full summary on hover (the card shows at most four lines), then the file
+			b.title = (e.summary ? e.summary + '\n' : '') + e.path
 			const head = el('span', 'batch-picker-card-head')
 			const icon = el('span', 'batch-picker-card-icon')
 			icon.setAttribute('aria-hidden', 'true')

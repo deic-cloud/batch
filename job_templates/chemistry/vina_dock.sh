@@ -1,7 +1,7 @@
 #!/bin/bash
 # Title: Dock a molecule to a protein (AutoDock Vina)
 # Category: Chemistry
-# Summary: Docks a ligand (SDF, MOL or PDBQT) into receptor.pdbqt within the box in vina_box.txt (both in the same folder), with AutoDock Vina.
+# Summary: Docks a ligand (SDF, MOL or PDBQT) into receptor.pdbqt, within vina_box.txt, with AutoDock Vina.
 # Output: <name>.docked.pdbqt (poses) and <name>.vina.txt (scores) next to each ligand
 # Featured: 6
 # Accepts: .sdf, .mol, .pdbqt
