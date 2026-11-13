@@ -1,84 +1,49 @@
 #!/bin/bash
 # Title: Convert video to 720p
 # Category: Media
-# Summary: Re-encode an mp4 video to 720p (H.264), e.g. for streaming or sharing.
-# Output: <name>_720p.mp4 in Batch/output_files
+# Summary: Re-encode a video to 720p H.264 (starts playing at once) - for streaming, sharing or embedding in a web page.
+# Output: _<name>_720p.mp4 next to the video (the underscore marks it as a converted copy - delete it any time)
 # Featured: 3
-# Accepts: video/mp4, .mp4
+# Accepts: video/*
 
 ################################################
 #
-# Transcode mp4 file to 720p.
-# using the helper script of the ScienceData
-# MediaCMS installation.
+# Transcode a video to 720p H.264/AAC mp4 with ffmpeg:
+# never upscaled, aspect ratio kept, the index at
+# the start of the file (-movflags +faststart) so a
+# browser starts playing before it has all of it.
+# NVIDIA GPU encoding (h264_nvenc) when the worker
+# has a GPU, otherwise libx264.
 #
 ################################################
 #
 # Batch system directives
 #
 #GRIDFACTORY -i IN_FILE_URL
-#GRIDFACTORY -o IN_BASENAME.out.mp4 WORK_FOLDER_URL/output_files/IN_BASENAME_720p.mp4
+#GRIDFACTORY -o _IN_BASENAME_720p.mp4 IN_FOLDER_URL_IN_BASENAME_720p.mp4
 #GRIDFACTORY -r UTIL/MpegUtils-1.0
 #GRIDFACTORY -n transcode_720p-IN_FILENAME
 #GRIDFACTORY -s MY_SSL_DN
 #
 ################################################
 
-# Grab python helper from MediaCMS
+height=720
+in='IN_FILENAME_RAW'
+out='_IN_BASENAME_720p.mp4'
 
-nvidia-smi -L
-if [[ "$?" == "0" ]]; then
-  helper="helpers-hvenc"
+# Common options: scale to the height (never up), even width, the most
+# compatible pixel format, first video + first audio stream (if any),
+# AAC stereo audio, index first.
+common=(-map 0:v:0 -map '0:a:0?' -vf "scale=-2:'min($height,ih)'" -pix_fmt yuv420p
+        -c:a aac -b:a 128k -ac 2 -movflags +faststart)
+
+encode() {
+  ffmpeg -hide_banner -nostdin -y -i "$in" "${common[@]}" "$@" "$out"
+}
+
+if nvidia-smi -L >/dev/null 2>&1 && ffmpeg -hide_banner -encoders 2>/dev/null | grep -q h264_nvenc \
+   && encode -c:v h264_nvenc -preset p5 -rc vbr -cq 23 -b:v 0; then
+  echo "encoded with h264_nvenc (GPU)"
 else
-  helper="helpers"
+  encode -c:v libx264 -preset medium -crf 23 && echo "encoded with libx264 (CPU)"
 fi
-
-curl -o helper.py -L https://raw.githubusercontent.com/deic-dk/mediacms/refs/heads/main/files/$helper.py
-sed -i -E 's|(from django.conf import settings)|import settings|' helper.py
-
-# Generate settings
-
-cat <<"EOF"> settings.py
-BASE_DIR = "."
-FFMPEG_COMMAND = "ffmpeg"
-FFPROBE_COMMAND = "ffprobe"
-FRIENDLY_TOKEN_LEN = 8
-MEDIA_ROOT = "."
-PORTAL_WORKFLOW = "public"
-TEMP_DIRECTORY = "."
-
-media_file = "IN_FILENAME_RAW"
-output_filename = "IN_BASENAME.out.mp4"
-
-resolution = 720 # 240, 360, 480, 720, 1080, 1440, 2160
-
-codec = "h264" # "h265", "hevc", "vp9"
-pass_file = "passfile"
-chunk = False
-
-helper = "HELPER"
-
-EOF
-
-sed -i "s|HELPER|$helper|" settings.py
-
-# Run ffmpeg
-
-python3 -c "
-import json
-import subprocess
-import settings
-import helper
-from helper import media_file_info, produce_ffmpeg_commands
-media_info = media_file_info(settings.media_file)
-ffmpeg_command = produce_ffmpeg_commands(settings.media_file, json.dumps(media_info), settings.resolution, settings.codec, settings.output_filename, settings.pass_file, settings.chunk)
-if settings.helper == 'helpers-hvenc':
-    for i in range(len(ffmpeg_command[0])):
-        if ffmpeg_command[0][i] == '-crf':
-            del ffmpeg_command[0][i]
-            del ffmpeg_command[0][i]
-            break
-subprocess.run(ffmpeg_command[0])
-"
-
-
