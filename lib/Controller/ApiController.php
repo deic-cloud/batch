@@ -216,11 +216,33 @@ class ApiController extends Controller {
 		try {
 			$content = $this->batch->getJobFile($this->uid(), $identifier, $filename, $status);
 		} catch (BatchServiceException $e) {
+			if ($e->getCode() === 404 && ($filename === 'stdout' || $filename === 'stderr')) {
+				return $this->fail($this->outputNotThereYet($filename, $status));
+			}
 			return $this->fail($e->getMessage(), Http::STATUS_BAD_GATEWAY);
 		}
 		if ($download === 'true' || $download === '1') {
 			return new DataDownloadResponse($content, $filename, 'application/octet-stream');
 		}
 		return $this->ok(['filename' => $filename, 'content' => $content]);
+	}
+
+	/**
+	 * Why the batch server has no stdout/stderr (yet), from the job's status.
+	 * The worker sends them while the job runs and in full when it ends; an
+	 * empty one is never sent.
+	 */
+	private function outputNotThereYet(string $filename, string $status): string {
+		$state = explode(':', $status)[0];
+		if (in_array($state, ['defined', 'downloading', 'ready', 'requested', 'prepared'], true)) {
+			return "No {$filename} yet: the job has not started running.";
+		}
+		if (in_array($state, ['running', 'paused', 'executed', 'uploaded'], true)) {
+			return "No {$filename} yet: the worker sends it to the batch server while the job runs, and in full when it ends. Try again in a little while.";
+		}
+		if ($state === 'done') {
+			return "No {$filename}: the job wrote nothing there.";
+		}
+		return "No {$filename} was delivered for this job.";
 	}
 }
