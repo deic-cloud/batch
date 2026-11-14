@@ -229,8 +229,8 @@ class ApiController extends Controller {
 
 	/**
 	 * Why the batch server has no stdout/stderr (yet), from the job's status.
-	 * The worker sends them while the job runs and in full when it ends; an
-	 * empty one is never sent.
+	 * The worker sends them while the job runs and in full when it ends (an
+	 * empty one too), so after the end a missing one was not delivered.
 	 */
 	private function outputNotThereYet(string $filename, string $status): string {
 		$state = explode(':', $status)[0];
@@ -239,9 +239,6 @@ class ApiController extends Controller {
 		}
 		if (in_array($state, ['running', 'paused', 'executed', 'uploaded'], true)) {
 			return "No {$filename} yet: the worker sends it to the batch server while the job runs, and in full when it ends. Try again in a little while.";
-		}
-		if ($state === 'done') {
-			return "No {$filename}: the job wrote nothing there.";
 		}
 		return "No {$filename} was delivered for this job.";
 	}
